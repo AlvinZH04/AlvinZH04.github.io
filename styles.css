@@ -101,20 +101,15 @@ a:hover {
     flex-shrink: 0;
 }
 
-.avatar-placeholder {
-    width: 130px;
-    height: 130px;
+.avatar {
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #8b1a1a 0%, #4a0d0d 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-serif);
-    font-size: 2.6rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    object-fit: cover;
+    object-position: center 25%;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.10);
+    border: 3px solid #fff;
+    display: block;
 }
 
 /* ------------------------------------------------------------------ */
@@ -346,10 +341,9 @@ a:hover {
         gap: 20px;
     }
 
-    .avatar-placeholder {
-        width: 96px;
-        height: 96px;
-        font-size: 1.9rem;
+    .avatar {
+        width: 110px;
+        height: 110px;
     }
 
     .header h1 {
