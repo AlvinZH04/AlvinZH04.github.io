@@ -146,6 +146,19 @@ a:hover {
     margin-bottom: 18px !important;
 }
 
+.name-note {
+    font-family: var(--font-serif);
+    font-size: 1.02rem;
+    color: var(--color-muted);
+    border-left: 2px solid var(--color-accent);
+    padding-left: 14px;
+    margin-top: 4px !important;
+}
+
+.name-note em {
+    color: var(--color-text);
+}
+
 /* ------------------------------------------------------------------ */
 /* Interest list                                                       */
 /* ------------------------------------------------------------------ */
