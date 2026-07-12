@@ -869,3 +869,31 @@ a:hover {
 
     .footer-line { line-height: 1.7; }
 }
+
+/* --- Section directory (site guide) + availability note --- */
+.site-nav {
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 12px 14px; border: 1px solid var(--border);
+    background: var(--surface); border-radius: 4px; box-shadow: var(--shadow-card);
+}
+.site-nav-title {
+    font-family: "JetBrains Mono", monospace; font-size: 0.62rem; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-mute); margin: 0 0 6px;
+}
+.site-nav a {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 0.82rem; color: var(--text-soft); text-decoration: none;
+    padding: 3px 4px; border-radius: 3px; transition: color 0.15s ease, background 0.15s ease;
+}
+.site-nav a:hover { color: var(--accent); background: var(--accent-faint); }
+.site-nav a .n {
+    font-family: "JetBrains Mono", monospace; font-size: 0.68rem;
+    color: var(--text-mute); flex-shrink: 0; width: 1.5em;
+}
+.availability {
+    margin: 20px 0 6px; padding: 12px 16px;
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    background: var(--accent-faint); border-radius: 4px;
+    font-size: 0.9rem; color: var(--text-soft); line-height: 1.55;
+}
+.availability strong { color: var(--text); }
