@@ -196,15 +196,20 @@
     <span class="frac"><span class="t">1</span><span class="d"><span class="sum">∑</span><sub>t</sub> M<sub>t</sub></span></span>
     <span class="sum">∑</span><sub>t</sub> M<sub>t</sub> <span class="op">(</span>−<span class="sum">∑</span><sub>v</sub>
     p<sub>t</sub><sup>(m)</sup>(v) log p<sub>t</sub><sup>(m)</sup>(v)<span class="op">)</span></span><span class="n">(3)</span></div>
-  <div class="eq"><span class="b">φ ← φ − α · <span class="op">Adam</span>(∇<sub>φ</sub> L<sub>ent</sub>);&nbsp;&nbsp;
-    first step: Δφ<sub>1</sub> = −α · g/(|g|+ε) ≈ −α · <span class="op">sign</span>(g) when |g|≫ε,&nbsp; g = ∇<sub>φ</sub> L<sub>ent</sub></span><span class="n">(4)</span></div>
+  <div class="eq"><span class="b">φ ← φ − α · <span class="op">Adam</span>(∇<sub>φ</sub> L<sub>ent</sub>)&nbsp;&nbsp;
+    <span class="op">(</span>repeat for s steps; s = 1 by default<span class="op">)</span></span><span class="n">(4)</span></div>
   <div class="eq"><span class="b">y ∼ p<sup>(d)</sup><sub>θ,φ</sub>(· | x),&nbsp;&nbsp; then φ ← φ<sub>0</sub>&nbsp;&nbsp;
     <span class="op">(episodic — restored per batch)</span></span><span class="n">(5)</span></div>
 
   <p>Eq. (2) keeps a position only when both the source token and its next-token target are real, so
   padding, the left-pad boundary, and the readout position drop out. The entropy (3) and the LM-loss
   variant then score the identical token set. The gradient in (4) flows through all <em>m</em> recurrent
-  applications of the shared <span class="math">φ</span>; nothing else is trainable. The default method uses
+  applications of the shared <span class="math">φ</span>; nothing else is trainable. One property of that
+  step matters later: because Adam starts from zero moments, the very <em>first</em> step is close to a
+  fixed-size move along the sign of the gradient, <span class="math">Δφ<sub>1</sub> ≈ −α·sign(∇<sub>φ</sub>
+  L<sub>ent</sub>)</span>, with a magnitude that barely depends on how large the gradient is. So a single
+  (<span class="math">s = 1</span>) update is mostly a <em>fixed</em> nudge to the scales, which is part of
+  why it can later be cached instead of recomputed per example (§10). The default method uses
   <span class="math">m = d = 4</span>; the depth-location experiments (§4, §5) vary <span class="math">m</span>
   and <span class="math">d</span> independently.</p>
 
