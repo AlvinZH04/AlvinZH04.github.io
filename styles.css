@@ -168,7 +168,14 @@ a:hover {
     position: sticky;
     top: 40px;
     align-self: start;
+    max-height: calc(100vh - 64px);   /* never taller than the viewport... */
+    overflow-y: auto;                  /* ...scroll within the sidebar so the CV stays reachable */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
 }
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
 
 .sidebar-inner {
     display: flex;
