@@ -150,7 +150,7 @@
       <li><a href="#signal">Which signal: entropy over LM loss</a></li>
       <li><a href="#passk">What adaptation does to the answers (pass@K)</a></li>
       <li><a href="#loop">Is it the loop?</a></li>
-      <li><a href="#datasets">Does it travel? MATH-500 and MMLU</a></li>
+      <li><a href="#datasets">Does it travel? MATH-500, MMLU, and scale</a></li>
       <li><a href="#limits">From online adaptation to reusable calibration</a></li>
       <li><a href="#refs">References</a></li>
     </ol>
@@ -466,16 +466,10 @@
   <strong>recurrent reuse appears to amplify the update in Ouro; Qwen is a performance-matched external
   control, not a clean causal isolation of recurrence.</strong> The clean test (replaying one fixed update
   at increasing depth within Ouro) is on the list.</p>
-  <p>A scaling note in the same spirit: at 2.6B the 1.4B learning rate <em>collapses</em> the model (one
-  step perturbs its readout ~4× more) and a ~4× smaller rate recovers a gain (+3.4). We treat the "4×" as
-  a hypothesis the data is consistent with, not a derived law. The <em>depth</em> story itself carries over:
-  at 2.6B accuracy still peaks at the trained depth (0.82 at <code>r=4</code>) and overthinks beyond it, only
-  more gently than at 1.4B (<code>r=16</code> falls to 0.25 rather than 0.16), so the larger model is more
-  stable under deep looping while showing the same reasoning-then-overthinking shape (n=200, single lr).</p>
 
-  <h2 id="datasets">9. Does it travel? MATH-500 and MMLU</h2>
-  <p>We also explore MATH-500 and a subset of MMLU to probe whether the depth and adaptation effects
-  transfer across task difficulty and output format.</p>
+  <h2 id="datasets">9. Does it travel? MATH-500, MMLU, and scale</h2>
+  <p>We also explore MATH-500, a subset of MMLU, and the larger Ouro-2.6B to probe whether the depth and
+  adaptation effects transfer across task difficulty, output format, and model scale.</p>
   <p><strong>MATH-500 (harder math).</strong> Settings: zero-shot instruct prompt, n=200, a 2,048-token
   generation budget, greedy decoding, <code>r=4</code>, <code>s=1</code>. The same episodic entropy update
   <strong>generalizes</strong>: entropy <b>+3.0</b> (baseline 0.740 → 0.770), while the LM-loss objective
@@ -502,6 +496,18 @@
   A/B/C/D decision margin; this may reflect a mismatch between the adaptation proxy and the evaluation
   decision rather than a lack of entropy in the output format itself. This is a hard-skewed subject subset,
   so we do not report an absolute MMLU number against the paper's full 57-subject protocol.</p>
+  <p><strong>Scale (Ouro-2.6B).</strong> The patterns are not 1.4B-specific, though they soften at scale
+  (n=200, single lr, so read this as a confirmation, not a headline). The 2.6B baseline reproduces the
+  paper's range on GSM8K (0.838 vs 0.816). The same reasoning-then-overthinking inverse-U appears (baseline
+  accuracy by depth <code>r = 1,2,4,8,16</code>: 0.38, 0.75, <strong>0.82</strong>, 0.805, 0.25), peaking at
+  the trained depth <code>r=4</code>, but the decline is gentler than at 1.4B: <code>r=8</code> barely drops
+  and <code>r=16</code> collapses less deeply (0.25 vs 1.4B's 0.16), so the larger model is more stable under
+  deep looping. TTT still helps but needs a scale-appropriate learning rate and buys less: at the 1.4B rate
+  one step <em>collapses</em> the model (0.83 → 0.40, its readout perturbed ~4× more per step), while a ~4×
+  smaller rate recovers a gain (+3.4). Adapting at the trained depth is near-neutral at the already-strong
+  peak (+0.01 at <code>r=4</code>) and helps most in the overthinking tail (+0.08 at <code>r=16</code>),
+  consistent with the smaller model having more headroom. We treat the "~4×" as an empirical hypothesis, not
+  a derived scaling law.</p>
   <div class="callout"><strong>The picture in one line.</strong> Looped depth buys reasoning up to the
   trained depth then overthinks (general); at that depth a minimal entropy-TTT update helps, best read on
   the prompt at the trained depth and reset every batch (GSM8K, replicated on MATH); recurrence appears to
