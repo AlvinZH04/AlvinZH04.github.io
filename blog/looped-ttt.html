@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Test-time training on looped/recurrent-depth transformers (Ouro-1.4B): where and when a tiny norm-affine update helps, and why most of the gain is a reusable calibration vector.">
+<link rel="canonical" href="https://alvinzh04.github.io/blog/looped-ttt.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Loop deeper, or adapt? Test-time training in looped transformers">
 <meta property="og:description" content="Test-time training on looped/recurrent-depth transformers (Ouro-1.4B): where and when a tiny norm-affine update helps, and why most of the gain is a reusable calibration vector.">
@@ -111,7 +113,7 @@
 
 <header class="hd"><div class="wrap">
   <h1>Loop deeper, or adapt? Test-time training in looped transformers</h1>
-  <div class="dateline">Alvin Zhang · <a href="mailto:bzhang90@jh.edu">bzhang90@jh.edu</a> · July 12, 2026 · loop_steer notes</div>
+  <div class="dateline">Alvin Zhang · <a href="mailto:bzhang90@jh.edu">bzhang90@jh.edu</a> · Published July 12, 2026 · updated July 13, 2026 · loop_steer notes</div>
 </div></header>
 
 <main class="wrap">
@@ -128,9 +130,10 @@
     more recurrent steps. Mapping the design space turns up a few surprises: entropy is a stronger objective
     than prompt language-model loss; the update must be <em>reset after every batch</em> (letting it
     accumulate collapses the model); and, uniquely for a loop, signals read at the model's trained recurrence
-    depth are markedly <strong>safer</strong> than signals read from shallow or overthinking states, though
-    their benefit under deeper decoding varies. Most of the measurable gain is a reusable calibration vector
-    derived from the shared demonstrations, capturable with no test-time gradient. Both headline effects
+    depth are <strong>substantially less harmful in the tested sweeps</strong> than signals read from shallow
+    or overthinking states, though their benefit under deeper decoding varies. On four-shot GSM8K, most of the
+    measurable gain is a reusable calibration vector derived from the shared demonstrations, capturable with
+    no test-time gradient. Both headline effects
     reproduce on MATH-500, while the depth/overthinking pattern (but not the entropy-TTT gain) transfers to a
     subset of MMLU. The result is a narrow operating regime in which adaptation is most useful when its signal
     is read at the model's trained recurrence depth.</p>
@@ -177,10 +180,11 @@
   nonidentical prompting and scoring, a useful implementation sanity check rather than an exact reproduction.</p>
   <p><strong>The recipe.</strong> Test-time training here is <em>Tent-inspired</em> (Wang et al., 2021) and
   deliberately minimal, applied <strong>batch-episodically</strong>: for each batch of
-  <span class="math">B</span> prompts, we minimize a target-label-free objective (by default the
-  strict-masked mean prompt entropy) with respect to the RMSNorm scale vectors, decode all
-  <span class="math">B</span> answers with the resulting shared update, then restore the base scales. Because
-  the update is averaged over the batch, batch size is a hyperparameter of the method. Related LLM test-time
+  <span class="math">B</span> prompts, we minimize a target-label-free objective (by default the mean entropy
+  over all valid prompt-token transitions in the batch) with respect to the RMSNorm scale vectors, decode all
+  <span class="math">B</span> answers with the resulting shared update, then restore the base scales. The
+  objective is a <em>token-weighted</em> batch mean (Eq. 3), so longer prompts receive proportionally more
+  weight, and batch size is a hyperparameter of the method. Related LLM test-time
   methods differ in what they optimize: per-prompt optimization of a final-layer vector with prompt
   cross-entropy (SLOT, Y. Hu et al., 2025), target-domain input-perplexity adaptation with LoRA (TLM, J. Hu
   et al., 2025), and joint input-perplexity and output-prefix-entropy adaptation with a reverse-KL anchor
@@ -197,13 +201,12 @@
   <div class="eq"><span class="b">h<sup>(j+1)</sup> = F<sub>θ,φ</sub>(h<sup>(j)</sup>, x),&nbsp;&nbsp;
     j = 0,…,m−1,&nbsp;&nbsp; p<sub>t</sub><sup>(m)</sup> = <span class="op">softmax</span>(W<sub>out</sub> h<sub>t</sub><sup>(m)</sup>)</span><span class="n">(1)</span></div>
   <div class="eq"><span class="b">M<sub>t</sub> = a<sub>t</sub> a<sub>t+1</sub> ∈ {0,1}</span><span class="n">(2)</span></div>
-  <div class="eq"><span class="b">L<sub>ent</sub>(x; φ) =
-    <span class="frac"><span class="t">1</span><span class="d"><span class="sum">∑</span><sub>t</sub> M<sub>t</sub></span></span>
-    <span class="sum">∑</span><sub>t</sub> M<sub>t</sub> <span class="op">(</span>−<span class="sum">∑</span><sub>v</sub>
-    p<sub>t</sub><sup>(m)</sup>(v) log p<sub>t</sub><sup>(m)</sup>(v)<span class="op">)</span></span><span class="n">(3)</span></div>
+  <div class="eq"><span class="b">L<sub>ent</sub>(x<sub>1:B</sub>; φ) =
+    <span class="frac"><span class="t"><span class="sum">∑</span><sub>b,t</sub> M<sub>b,t</sub> <span class="op">(</span>−<span class="sum">∑</span><sub>v</sub>
+    p<sub>b,t</sub><sup>(m)</sup>(v) log p<sub>b,t</sub><sup>(m)</sup>(v)<span class="op">)</span></span><span class="d"><span class="sum">∑</span><sub>b,t</sub> M<sub>b,t</sub></span></span></span><span class="n">(3)</span></div>
   <div class="eq"><span class="b">φ ← φ − α · <span class="op">Adam</span>(∇<sub>φ</sub> L<sub>ent</sub>)&nbsp;&nbsp;
     <span class="op">(</span>repeat for s steps; s = 1 by default<span class="op">)</span></span><span class="n">(4)</span></div>
-  <div class="eq"><span class="b">y ∼ p<sup>(d)</sup><sub>θ,φ</sub>(· | x),&nbsp;&nbsp; then φ ← φ<sub>0</sub>&nbsp;&nbsp;
+  <div class="eq"><span class="b">y = <span class="op">GreedyDecode</span>(p<sup>(d)</sup><sub>θ,φ</sub>(· | x)),&nbsp;&nbsp; then φ ← φ<sub>0</sub>&nbsp;&nbsp;
     <span class="op">(episodic — restored per batch)</span></span><span class="n">(5)</span></div>
 
   <p>Eq. (2) keeps a position only when both the source token and its next-token target are real, so
@@ -237,8 +240,8 @@
   <strong>198,656 existing RMSNorm-scale scalars</strong> (0.014% of the model) are made temporarily
   trainable during each adaptation episode, roughly <strong>8&times; fewer than a LoRA adapter (Hu et al.,
   2022) at rank 8</strong> on just the query/value projections (about 38&times; fewer than LoRA-r8 on every linear layer).
-  Because a looped model reuses the same 24-layer core, this handful of scales is felt at every recurrent
-  step, so a very small update goes a long way. Everything this post explores is a knob in those lines:
+  Because a looped model reuses the same 24-layer core, the 96 in-loop scales are felt at every recurrent
+  step (the 97th, final readout scale, once after recurrence), so a very small update goes a long way. Everything this post explores is a knob in those lines:
   <em>which</em> objective (the <code>H</code>), <em>where</em> the signal is read (which tokens, and at which
   <code>loop_depth</code>), <em>when</em> <code>saved</code> is restored, and <em>how much</em>
   (<code>s</code>, lr).</p>
@@ -270,7 +273,9 @@
   <h2 id="window">4. A window where adapting beats looping</h2>
   <p>Right at the peak (where looping deeper stops helping) is where the test-time update earns its keep.
   At <code>r=4</code>, one entropy step improves GSM8K accuracy (0.766 → 0.848, n=500) and outperforms
-  simply increasing the decode depth to <code>r=8</code> (0.694). But the
+  simply increasing the decode depth to <code>r=8</code> (0.694). This is an accuracy comparison between the
+  tested procedures, not a wall-clock-, memory-, or latency-matched deployment study; adaptation adds a
+  forward and backward pass plus an optimizer step, whereas deeper looping only changes inference depth. But the
   window is narrow: below the peak, adapting is the wrong move (just loop, it's worth far more); well past
   the peak, the loop has degraded too far for the update to recover.</p>
   <p style="color:var(--muted);font-size:13px;margin-top:-6px">Robustness: this gain is not a truncation
@@ -328,7 +333,7 @@
   </figure>
   <p>The n=300 intervals at the full 1024-token budget sharpen the reading. What is solid is the contrast in
   the tail: matched-depth adaptation collapses (<code>−0.237</code> at <code>r=8</code>), while reading at the
-  trained depth is far safer, holding at <code>r=8</code> (<code>+0.033</code>, not significant) and even
+  trained depth is substantially less harmful, holding at <code>r=8</code> (<code>+0.033</code>, not significant) and even
   recovering a little accuracy at <code>r=16</code> (<code>+0.103</code>, significant). Trained-depth TTT is
   still not a universal free lunch: past the trained depth it stops helping reliably, and the significant
   wins sit at the trained depth itself and, marginally, the deepest one. The takeaway is about <em>where</em>,
@@ -384,10 +389,11 @@
   <h3>Where in the loop: read the signal at the trained depth</h3>
   <p>This is the axis a single-pass model doesn't have, and the one that surprised me most. You can read the
   entropy signal at any loop depth <code>m</code> (the shared scales are the same at every iteration) and
-  then decode at a possibly different depth <code>d</code>. Sweeping both: adapting at the model's
-  <strong>trained depth (<code>m=4</code>)</strong> is the unique sweet spot for the adaptation signal.
-  Decoding at the trained depth (<code>d=4</code>) it gives the full +7.0. Decoding deeper (<code>d=8</code>)
-  it gives a small, non-significant gain at the 1024-token budget (§4), with low truncation. Qualitatively,
+  then decode at a possibly different depth <code>d</code>. Sweeping both: among the tested adapt depths, the
+  model's <strong>trained depth (<code>m=4</code>)</strong> produced the strongest update. Decoding at the
+  trained depth (<code>d=4</code>) it gives the full +7.0, and it is substantially less harmful than shallow-
+  or overthinking-depth adaptation when decoding deeper. At <code>d=8</code>, however, its measured gain is
+  small and not statistically significant at the 1024-token budget (§4), with low truncation. Qualitatively,
   the trained-depth update tends to leave the few failing chains coherent and merely cut off before the
   answer rather than broken, though we did not run a completion-level analysis to confirm this. So
   trained-depth adaptation is less harmful than adapting through the overthinking depth, though its
@@ -405,7 +411,7 @@
   <p>So the looped answer to "where do you adapt" is neither "at the decode depth" (<code>adapt@8</code> /
   <code>decode@8</code> collapses) nor "early and cheap" (shallow adaptation hurts). It is
   <strong>adapt where the model is competent (the trained depth)</strong>: that is the best tested source of
-  the update and is markedly safer than adapting at an overthinking depth, even though its benefit under
+  the update and is substantially less harmful than adapting at an overthinking depth, even though its benefit under
   deeper decoding varies across runs. <em>How much</em> is the tame axis: one step is best; more overfits.</p>
 
   <h2 id="signal">6. Which signal: entropy over LM loss</h2>
@@ -557,14 +563,15 @@
   and adapts it at test time; the collapse past the trained depth is a property of how the model was trained,
   not a law of recurrence. Prior and recent work suggests looped models can be made more stable as depth
   grows: <em>Universal Transformers</em>
-  (<a href="https://arxiv.org/abs/1807.03819">Dehghani et al., 2019</a>) pair weight-shared recurrence with
-  adaptive halting so a token stops iterating before it over-processes, and the <em>readout blind spot</em>
-  analysis (<a href="https://arxiv.org/abs/2606.24898">Sharma &amp; Vu, 2026</a>) shows that scale-invariant
-  per-loop supervision lets hidden-state norms drift unchecked, and that controlling that scale improves the
-  depth-vs-compute frontier. Most directly, STARS
-  (<a href="https://arxiv.org/abs/2605.26733">Yang et al., 2026</a>) targets the same collapse we observe by
-  training the recurrent latent states toward stable fixed points, so accuracy stops degrading with added
-  depth. A model trained to stay reliable at greater depth would change what a test-time
+  (<a href="https://arxiv.org/abs/1807.03819">Dehghani et al., 2019</a>) combine recurrent weight sharing with
+  adaptive per-position halting, letting different tokens receive different numbers of refinement steps, and
+  the <em>readout blind spot</em> analysis
+  (<a href="https://arxiv.org/abs/2606.24898">Sharma &amp; Vu, 2026</a>), in controlled looped language models,
+  shows that normalized readouts can leave recurrent hidden-state scale weakly supervised, and that explicit
+  scale control improves the measured variable-depth perplexity-compute frontier. Most directly, STARS
+  (<a href="https://arxiv.org/abs/2605.26733">Yang et al., 2026</a>) trains recurrent dynamics toward greater
+  fixed-point stability; in its experiments this prevents degradation in a controlled addition task and slows
+  the decline under depth extrapolation on mathematical-reasoning benchmarks. A model trained to stay reliable at greater depth would change what a test-time
   update can do: the same "read the signal at the competent depth, then decode" strategy could become useful
   at depths where the current model only overthinks. Testing this cheap calibration on such depth-stabilized
   looped models is the direction we consider most promising, and one we have not yet explored.</p>
@@ -572,6 +579,10 @@
   <h3>Scope</h3>
   <p>The recipe's knobs were chosen while looking at GSM8K test accuracy, so the confidence intervals do
   not cover that selection (this is selection, not label leakage: the model never sees the gold). The
+  displayed intervals are also <em>pointwise</em>: they are not adjusted for multiple comparisons or for
+  configuration selection across the depths, objectives, learning rates, reset schedules, and
+  parameterizations explored in the broader sequence, so the reported effects are exploratory rather than
+  confirmatory. The
   where/when/where-in-loop results are location <em>ablations</em>, not budget-enforced comparisons. The
   "continual" condition is continual-in-weights but rebuilds the optimizer each batch, and the amplification
   claim rests on a cross-family control. A confirmatory evaluation on a separately selected split would
