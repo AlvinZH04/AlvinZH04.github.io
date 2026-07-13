@@ -273,6 +273,9 @@
   simply increasing the decode depth to <code>r=8</code> (0.694). But the
   window is narrow: below the peak, adapting is the wrong move (just loop, it's worth far more); well past
   the peak, the loop has degraded too far for the update to recover.</p>
+  <p style="color:var(--muted);font-size:13px;margin-top:-6px">Robustness: this gain is not a truncation
+  artifact. Only about 1% of chains hit the token budget in either arm, and the truncation-excluded
+  (completed-only) gain is +7.8, essentially unchanged from the +8.2 overall.</p>
   <table class="d">
     <thead><tr><th>regime</th><th>observation</th><th>preferred intervention</th></tr></thead>
     <tbody>
