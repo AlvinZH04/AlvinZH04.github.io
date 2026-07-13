@@ -502,12 +502,12 @@
   accuracy by depth <code>r = 1,2,4,8,16</code>: 0.38, 0.75, <strong>0.82</strong>, 0.805, 0.25), peaking at
   the trained depth <code>r=4</code>, but the decline is gentler than at 1.4B: <code>r=8</code> barely drops
   and <code>r=16</code> collapses less deeply (0.25 vs 1.4B's 0.16), so the larger model is more stable under
-  deep looping. TTT still helps but needs a scale-appropriate learning rate and buys less: at the 1.4B rate
-  one step <em>collapses</em> the model (0.83 → 0.40, its readout perturbed ~4× more per step), while a ~4×
-  smaller rate recovers a gain (+3.4). Adapting at the trained depth is near-neutral at the already-strong
-  peak (+0.01 at <code>r=4</code>) and helps most in the overthinking tail (+0.08 at <code>r=16</code>),
-  consistent with the smaller model having more headroom. We treat the "~4×" as an empirical hypothesis, not
-  a derived scaling law.</p>
+  deep looping. Adaptation still helps but needs a scale-appropriate learning rate and buys less. At the
+  1.4B rate a single step <em>collapses</em> the model (GSM8K 0.833 → 0.40; its readout is perturbed ~4× more
+  per step). At a ~4× smaller rate the update is stable and lifts GSM8K accuracy at <code>r=4</code> by
+  <strong>+1.7 points with one step and +3.4 with two</strong> (0.833 → 0.867; the larger model prefers
+  gentler steps), well below 1.4B's ~+8, consistent with its smaller headroom. We treat the "~4×" as an
+  empirical hypothesis, not a derived scaling law.</p>
   <div class="callout"><strong>The picture in one line.</strong> Looped depth buys reasoning up to the
   trained depth then overthinks (general); at that depth a minimal entropy-TTT update helps, best read on
   the prompt at the trained depth and reset every batch (GSM8K, replicated on MATH); recurrence appears to
@@ -583,9 +583,10 @@
   looped models is the direction we consider most promising, and one we have not yet explored.</p>
 
   <h3>Scope</h3>
-  <p>The recipe's knobs were chosen while looking at GSM8K test accuracy, so the confidence intervals do
-  not cover that selection (this is selection, not label leakage: the model never sees the gold). The
-  displayed intervals are also <em>pointwise</em>: they are not adjusted for multiple comparisons or for
+  <p>We tuned the recipe's settings by watching GSM8K test accuracy. The model never sees the gold answers,
+  so this is not label leakage; but choosing the settings that scored best on this test set is its own
+  selection effect, which the confidence intervals do not capture, so the headline numbers are likely
+  optimistic. The displayed intervals are also <em>pointwise</em>: they are not adjusted for multiple comparisons or for
   configuration selection across the depths, objectives, learning rates, reset schedules, and
   parameterizations explored in the broader sequence, so the reported effects are exploratory rather than
   confirmatory. The
