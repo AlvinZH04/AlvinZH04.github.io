@@ -113,7 +113,7 @@
 
 <header class="hd"><div class="wrap">
   <h1>Loop deeper, or adapt? Test-time training in looped transformers</h1>
-  <div class="dateline">Alvin Zhang · <a href="mailto:bzhang90@jh.edu">bzhang90@jh.edu</a> · Published July 12, 2026 · updated July 13, 2026 · loop_steer notes</div>
+  <div class="dateline">Alvin Zhang · <a href="mailto:bzhang90@jh.edu">bzhang90@jh.edu</a> · Published July 12, 2026 · updated July 14, 2026 · loop_steer notes</div>
 </div></header>
 
 <main class="wrap">
@@ -190,7 +190,7 @@
   <span class="math">B</span> prompts, we minimize a target-label-free objective (by default the mean entropy
   over all valid prompt-token transitions in the batch) with respect to the RMSNorm scale vectors, decode all
   <span class="math">B</span> answers with the resulting shared update, then restore the base scales. The
-  objective is a <em>token-weighted</em> batch mean (Eq. 3), so longer prompts receive proportionally more
+  objective is a <em>token-weighted</em> batch mean (Eq. (3)), so longer prompts receive proportionally more
   weight, and batch size is a hyperparameter of the method. Related LLM test-time
   methods differ in what they optimize: per-prompt optimization of a final-layer vector with prompt
   cross-entropy (SLOT, <a href="https://arxiv.org/abs/2505.12392">Y. Hu et al., 2025</a>), target-domain input-perplexity adaptation with LoRA (TLM, <a href="https://arxiv.org/abs/2505.20633">J. Hu
@@ -255,7 +255,7 @@
   (<code>s</code>, lr).</p>
   <p><strong>Datasets.</strong> GSM8K (grade-school math, our primary benchmark, where our baseline approximately reproduces the reported range; <a href="https://arxiv.org/abs/2110.14168">Cobbe
   et al., 2021</a>), MATH-500 (the 500-problem evaluation subset of harder competition math; <a href="https://arxiv.org/abs/2103.03874">Hendrycks et al., 2021</a>; <a href="https://arxiv.org/abs/2305.20050">Lightman et al., 2023</a>), and a subset of MMLU
-  (multiple-choice knowledge; <a href="https://arxiv.org/abs/2009.03300">Hendrycks et al., 2021</a>). Generative math answers are scored with Math-Verify
+  (multiple-choice knowledge; <a href="https://arxiv.org/abs/2009.03300">Hendrycks et al., 2021</a>). Generative math answers are scored with <a href="https://github.com/huggingface/Math-Verify">Math-Verify</a>
   v0.9.0 (Kydlíček) for mathematical equivalence, with a lightweight regex scorer retained as a diagnostic cross-check; MMLU is scored from next-token A/B/C/D
   logits. The main greedy GSM8K and MATH runs retain full decoded generations for offline rescoring;
   aggregate sampling and diagnostic exceptions are noted with their results.</p>
@@ -293,7 +293,7 @@
     <thead><tr><th>regime</th><th>observation</th><th>preferred intervention</th></tr></thead>
     <tbody>
       <tr><td><b>r = 1</b> (below trained depth)</td><td>yes: r1→r2 ≈ +40 pt</td><td class="v-loop">loop deeper</td></tr>
-      <tr><td><b>r = 4</b> (at trained depth)</td><td>no: r4→r8 = −6 pt</td><td class="v-adapt">adapt (+8)</td></tr>
+      <tr><td><b>r = 4</b> (at trained depth)</td><td>no: r4→r8 = −6 pt (greedy)</td><td class="v-adapt">adapt (+8)</td></tr>
       <tr><td><b>r = 8</b> (overthinking decode)</td><td>adapting from the r=8 state hurts</td><td class="v-adapt">prefer decoding at <code>r=4</code>; if deep decoding is required, adapt@4 is less harmful than adapt@8 in the tested sweeps</td></tr>
     </tbody>
   </table>
@@ -399,7 +399,7 @@
   <h3>Where in the loop: read the signal at the trained depth</h3>
   <p>This is the axis a single-pass model doesn't have, and the one that surprised me most. You can read the
   entropy signal at any loop depth <code>m</code> (the shared scales are the same at every iteration) and
-  then decode at a possibly different depth <code>d</code>. Sweeping both in this location sweep (Figure 5,
+  then decode at a possibly different depth <code>d</code>. Sweeping both in this location sweep (Fig. 5,
   512-token generation budget): among the tested adapt depths, the model's
   <strong>trained depth (<code>m=4</code>)</strong> produced the strongest update at both tested decode
   depths. Decoding at the trained depth (<code>d=4</code>) it gives the full +7.0, and it is substantially
@@ -500,8 +500,8 @@
   answer letter (A/B/C/D), which we score directly from the next-token logits rather than from a generated
   chain. We ran two probes on a subset of MMLU subjects. The <em>depth</em> probe covers 11 subjects; the
   <em>TTT</em> probe covers 10 of them (one subject completed only the depth run). Two clean findings come
-  out. First, the depth inverse-U <strong>reproduces</strong>: every one of the 11 subjects peaks at
-  <code>r=4</code> (a few extend to r4–8) and declines by <code>r=16</code>. Second, the entropy update is
+  out. First, the depth inverse-U <strong>reproduces</strong>: nearly all of the 11 subjects peak at
+  <code>r=4</code> (a few extend to r4–8) and all decline by <code>r=16</code>. Second, the entropy update is
   <strong>neutral</strong> on the 10 TTT subjects: the mean accuracy change is about +0.1 points (an
   unweighted macro-average across subjects), ranging from −4 to +5 points across subjects, i.e. no
   consistent effect. The split is the point. The <em>phenomenon</em> (accuracy degrading past the trained
@@ -536,7 +536,8 @@
   <h3>The update is mostly reusable</h3>
   <p>The same few-shot exemplars sit in every prompt, so I ran the decomposition on the shared prefix
   (paired rerun, n=300). Adapting on <em>just</em> the shared exemplars recovers <strong>+7.0</strong> of
-  the full <strong>+7.3</strong>, and one update learned once and reused for every problem (a fixed cached
+  this rerun's full <strong>+7.3</strong> (run-to-run variation from the +7.0 full gain reported elsewhere),
+  and one update learned once and reused for every problem (a fixed cached
   vector) recovers <strong>+6.7</strong>; the update points in nearly the same direction every batch
   (cosine 0.99). At <code>n=300</code> we did not detect a difference between full and fixed-cached TTT:
   full minus fixed-cached was +0.67 points, 95% CI [−3.0, +4.0]. This supports the conclusion that most
