@@ -217,7 +217,14 @@
   <div class="eq"><span class="b">y = <span class="op">GreedyDecode</span>(p<sup>(d)</sup><sub>θ,φ</sub>(· | x)),&nbsp;&nbsp; then φ ← φ<sub>0</sub>&nbsp;&nbsp;
     <span class="op">(episodic, restored per batch)</span></span><span class="n">(5)</span></div>
 
-  <p>Eq. (2) keeps a position only when both the source token and its next-token target are real, so
+  <p>Here <span class="math">θ</span> are the frozen base weights (only <span class="math">φ</span> is
+  trained), <span class="math">F<sub>θ,φ</sub></span> is one iteration of the shared recurrent core (the
+  <em>same</em> 24-layer stack and parameters at every step <span class="math">j</span>),
+  <span class="math">h<sup>(j)</sup></span> the hidden state after <span class="math">j</span> iterations,
+  and <span class="math">W<sub>out</sub></span> the readout. <span class="math">m</span> is the adaptation
+  depth (loops before the update) and <span class="math">d</span> the decoding depth (loops at generation).</p>
+
+  <p>The mask <span class="math">M<sub>t</sub></span> in Eq. (2) keeps a position only when both the source token and its next-token target are real, so
   padding, the left-pad boundary, and the readout position drop out. The entropy (3) and the LM-loss
   variant then score the identical token set. The gradient in (4) flows through all <em>m</em> recurrent
   applications of the shared <span class="math">φ</span>; nothing else is trainable. We write
