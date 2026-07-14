@@ -177,7 +177,8 @@
   literature: if you take one gradient step on a looped model's weights at test time, does the loop do
   something <em>unexpected</em> with it? This post is what fell out of chasing that question. It is an open,
   curiosity-driven exploration of one model family. It is not a comprehensive study; I distinguish established
-  results from suggestive interpretations.</p>
+  results from suggestive interpretations. Code and released artifacts:
+  <a href="https://github.com/AlvinZH04/Loop-TTT">github.com/AlvinZH04/Loop-TTT</a>.</p>
   <p>The organizing question: <strong>when you have spare test-time compute, should you loop deeper, or
   adapt the weights?</strong></p>
 
@@ -626,6 +627,9 @@
   for reviewing the post and providing revision suggestions. This post documents an exploratory
   sequence of experiments on recurrent-depth adaptation. Future work will test the resulting calibration
   vectors across prompt families, tasks, and looped-model families.</p>
+  <p class="cited"><strong>Code and artifacts.</strong> The implementation, prompts, run manifests, aggregate
+  results, figure inputs, and released generation logs are available at
+  <a href="https://github.com/AlvinZH04/Loop-TTT">github.com/AlvinZH04/Loop-TTT</a>.</p>
   <p class="cited"><strong>Open to discussion.</strong> Comments, questions, and pushback are all welcome.
   I'm reachable at <a href="mailto:bzhang90@jh.edu">bzhang90@jh.edu</a> and always happy to discuss this work.</p>
   <p class="cited"><strong>Cited as:</strong> Zhang, Alvin (2026). "Loop deeper, or adapt? Test-time training
