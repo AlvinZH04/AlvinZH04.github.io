@@ -135,9 +135,9 @@
     sharpening confidence can help at all. Mapping that design space, a few patterns emerge. The entropy
     objective outperforms a prompt language-model-loss objective in this setting, a direction the wider
     literature does <em>not</em> settle. The update also has to be <em>reset after every batch</em>, because
-    letting it accumulate collapses the model. And, uniquely for a loop, the adaptation signal is
-    <strong>substantially less harmful in the tested sweeps</strong> when read at the model's trained
-    recurrence depth than at shallow or overthinking states, though its benefit under deeper decoding varies. On four-shot GSM8K, most of the
+    letting it accumulate collapses the model. And, uniquely for a loop, in the tested sweeps the reliable place to read the adaptation
+    signal was the model's <strong>trained recurrence depth</strong>; adapting from shallow or overthinking
+    states could sharply hurt, and whether it helps under deeper decoding is less consistent. On four-shot GSM8K, most of the
     measurable gain is a reusable calibration vector derived from the shared demonstrations, capturable with
     no test-time gradient. Both headline effects
     reappear on the tested MATH-500 subset, while the depth/overthinking pattern (but not the entropy-TTT
