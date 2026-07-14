@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Test-time training on looped/recurrent-depth transformers (Ouro-1.4B): where and when a tiny norm-affine update helps, and why most of the gain is a reusable calibration vector.">
+<meta name="description" content="Test-time training on looped/recurrent-depth transformers (Ouro-1.4B): where and when a tiny norm-affine update helps, and why most of the measured gain on four-shot GSM8K becomes reusable prompt calibration.">
 <link rel="canonical" href="https://alvinzh04.github.io/blog/looped-ttt.html">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Loop deeper, or adapt? Test-time training in looped transformers">
-<meta property="og:description" content="Test-time training on looped/recurrent-depth transformers (Ouro-1.4B): where and when a tiny norm-affine update helps, and why most of the gain is a reusable calibration vector.">
+<meta property="og:description" content="Test-time training on looped/recurrent-depth transformers (Ouro-1.4B): where and when a tiny norm-affine update helps, and why most of the measured gain on four-shot GSM8K becomes reusable prompt calibration.">
 <meta name="twitter:card" content="summary">
 <title>Loop deeper, or adapt? Test-time training in looped transformers</title>
 <style>
@@ -123,7 +123,7 @@
     <p style="margin:0">Looped (recurrent-depth) transformers spend extra test-time compute by iterating the
     same recurrent core. This started as a simple curiosity: <em>if a looped model reuses the same weights
     every iteration, would nudging those weights at test time do something unexpected?</em> Working on the
-    Ouro-1.4B base model (whose baselines approximately reproduce the reported range), we find that accuracy
+    Ouro-1.4B base model, we find that accuracy
     climbs to the model's trained loop depth and then <strong>overthinks</strong>. Right at that depth, one
     <strong>batch-episodic</strong>, target-label-free update to 97 RMSNorm scale vectors, computed from
     strict-masked prompt <em>entropy</em>, improves generative math accuracy and beats simply decoding with
@@ -134,8 +134,8 @@
     or overthinking states, though their benefit under deeper decoding varies. On four-shot GSM8K, most of the
     measurable gain is a reusable calibration vector derived from the shared demonstrations, capturable with
     no test-time gradient. Both headline effects
-    reproduce on MATH-500, while the depth/overthinking pattern (but not the entropy-TTT gain) transfers to a
-    subset of MMLU. The result is a narrow operating regime in which adaptation is most useful when its signal
+    reappear on the tested MATH-500 subset, while the depth/overthinking pattern (but not the entropy-TTT
+    gain) transfers to a subset of MMLU. The result is a narrow operating regime in which adaptation is most useful when its signal
     is read at the model's trained recurrence depth.</p>
   </div>
 
@@ -161,8 +161,10 @@
   looped transformer spends it differently: it applies the same recurrent core <code>r</code> times before decoding,
   turning depth into a dial you can turn at test time. Ouro (<a href="https://arxiv.org/abs/2510.25741">Zhu et al., 2025</a>) is a real pretrained
   <em>base</em> LM built this way, trained with a maximum recurrence of four steps and evaluated here at a
-  fixed depth of <code>r=4</code> — not an RL-tuned reasoning model; any chain of thought here comes from
-  few-shot prompting. ("Trained depth" is our shorthand for this fixed <code>r=4</code> below.)</p>
+  fixed depth of <code>r=4</code>. It is not an RL-tuned reasoning model; any reasoning trace here is elicited
+  through prompting rather than a Thinking checkpoint. GSM8K uses four-shot chain-of-thought prompting, and
+  MATH-500 uses a zero-shot step-by-step instruction. ("Trained depth" is our shorthand for this fixed
+  <code>r=4</code> below.)</p>
   <p>The shared-weights part is what caught my attention. In an ordinary network, adapting a layer changes
   the computation once. In a loop, the <em>same</em> parameters are reused on every iteration, so a single
   small change to them is felt <code>r</code> times over. That raised a question I couldn't answer from the
@@ -218,9 +220,10 @@
   sets the step size and is not double-counted. One property of that
   step matters later: because Adam starts from zero moments, the very <em>first</em> step is close to a
   fixed-size move along the sign of the gradient, <span class="math">Δφ<sub>1</sub> ≈ −α·sign(∇<sub>φ</sub>
-  L<sub>ent</sub>)</span>, with a magnitude that barely depends on how large the gradient is. So a single
-  (<span class="math">s = 1</span>) update is mostly a <em>fixed</em> nudge to the scales, which is part of
-  why it can later be cached instead of recomputed per example (§10). The default method uses
+  L<sub>ent</sub>)</span>, with a coordinatewise magnitude that barely depends on how large the gradient is.
+  That pins the step's magnitude, but not its direction. What makes the single (<span class="math">s = 1</span>)
+  update <em>cacheable</em> is a separate, empirical fact: its direction is nearly constant across batches
+  (cosine ≈ 0.99, §10), which Adam alone does not imply. The default method uses
   <span class="math">m = d = 4</span>; the depth-location experiments (§4, §5) vary <span class="math">m</span>
   and <span class="math">d</span> independently.</p>
 
@@ -248,7 +251,7 @@
   <p><strong>Datasets.</strong> GSM8K (grade-school math, our primary benchmark, where our baseline approximately reproduces the reported range; <a href="https://arxiv.org/abs/2110.14168">Cobbe
   et al., 2021</a>), MATH-500 (the 500-problem evaluation subset of harder competition math; <a href="https://arxiv.org/abs/2103.03874">Hendrycks et al., 2021</a>; <a href="https://arxiv.org/abs/2305.20050">Lightman et al., 2023</a>), and a subset of MMLU
   (multiple-choice knowledge; <a href="https://arxiv.org/abs/2009.03300">Hendrycks et al., 2021</a>). Generative math answers are scored with Math-Verify
-  (Kydlíček), with a lightweight regex scorer as a cross-check; MMLU is scored from next-token A/B/C/D
+  v0.9.0 (Kydlíček) for mathematical equivalence, with a lightweight regex scorer retained as a diagnostic cross-check; MMLU is scored from next-token A/B/C/D
   logits. The main greedy GSM8K and MATH runs retain full decoded generations for offline rescoring;
   aggregate sampling and diagnostic exceptions are noted with their results.</p>
 
@@ -334,7 +337,9 @@
   <p>The n=300 intervals at the full 1024-token budget sharpen the reading. What is solid is the contrast in
   the tail: matched-depth adaptation collapses (<code>−0.237</code> at <code>r=8</code>), while reading at the
   trained depth is substantially less harmful, holding at <code>r=8</code> (<code>+0.033</code>, not significant) and even
-  recovering a little accuracy at <code>r=16</code> (<code>+0.103</code>, significant). Trained-depth TTT is
+  recovering a little accuracy at <code>r=16</code> (<code>+0.103</code>, significant). Although that
+  <code>r=16</code> improvement is statistically significant, absolute accuracy there stays poor (0.16 to
+  0.26), so adaptation does not undo the damage from extreme depth extrapolation. Trained-depth TTT is
   still not a universal free lunch: past the trained depth it stops helping reliably, and the significant
   wins sit at the trained depth itself and, marginally, the deepest one. The takeaway is about <em>where</em>,
   not <em>whether</em>: <strong>reading the adaptation signal at the model's competent trained depth is the
@@ -389,11 +394,14 @@
   <h3>Where in the loop: read the signal at the trained depth</h3>
   <p>This is the axis a single-pass model doesn't have, and the one that surprised me most. You can read the
   entropy signal at any loop depth <code>m</code> (the shared scales are the same at every iteration) and
-  then decode at a possibly different depth <code>d</code>. Sweeping both: among the tested adapt depths, the
-  model's <strong>trained depth (<code>m=4</code>)</strong> produced the strongest update. Decoding at the
-  trained depth (<code>d=4</code>) it gives the full +7.0, and it is substantially less harmful than shallow-
-  or overthinking-depth adaptation when decoding deeper. At <code>d=8</code>, however, its measured gain is
-  small and not statistically significant at the 1024-token budget (§4), with low truncation. Qualitatively,
+  then decode at a possibly different depth <code>d</code>. Sweeping both in this location sweep (Figure 5,
+  512-token generation budget): among the tested adapt depths, the model's
+  <strong>trained depth (<code>m=4</code>)</strong> produced the strongest update at both tested decode
+  depths. Decoding at the trained depth (<code>d=4</code>) it gives the full +7.0, and it is substantially
+  less harmful than shallow- or overthinking-depth adaptation when decoding deeper. Decoding at
+  <code>d=8</code> is a separate question: in the whole-depth rerun of Section 4 (1,024-token budget),
+  adapting at depth four and decoding at eight improved accuracy by 3.3 points, but the confidence interval
+  included zero, so we do not treat that deeper-decode gain as conclusive. Qualitatively,
   the trained-depth update tends to leave the few failing chains coherent and merely cut off before the
   answer rather than broken, though we did not run a completion-level analysis to confirm this. So
   trained-depth adaptation is less harmful than adapting through the overthinking depth, though its
@@ -433,7 +441,8 @@
 
   <h2 id="passk">7. What adaptation does to the answers (pass@K)</h2>
   <p>Sharpening the model has a predictable side effect: it concentrates most of the gain at low
-  <code>K</code>. Sampling eight completions per problem, the gain is concentrated at low sampling budgets:
+  <code>K</code>. We report pass@K using the unbiased estimator of
+  <a href="https://arxiv.org/abs/2107.03374">Chen et al. (2021)</a>. Sampling eight completions per problem, the gain is concentrated at low sampling budgets:
   <strong>+11.4 points at pass@1</strong> (0.64 → 0.76) and <strong>+2.5 at pass@8</strong>. TTT remains at
   or above baseline across the tested curve. Determining whether this changes semantic answer diversity
   requires completion-level diversity analysis.</p>
@@ -473,8 +482,8 @@
   <p><strong>MATH-500 (harder math).</strong> Settings: zero-shot instruct prompt, n=200, a 2,048-token
   generation budget, greedy decoding, <code>r=4</code>, <code>s=1</code>. The same episodic entropy update
   <strong>generalizes</strong>: entropy <b>+3.0</b> (baseline 0.740 → 0.770), while the LM-loss objective
-  <b>−2.0</b> (→ 0.720) actually hurts. So both headlines (TTT helps, and entropy beats LM) replicate on
-  a harder benchmark, at smaller magnitude (less headroom). A separate n=500, 4,096-token run measures the
+  <b>−2.0</b> (→ 0.720) actually hurts. So both headlines (TTT helps, and entropy beats LM) reappear on
+  the tested MATH-500 subset, at smaller magnitude (less headroom). A separate n=500, 4,096-token run measures the
   MATH baseline at 0.754 (a different run from the TTT result above). <em>A note on the number: Appendix C.1
   (Table 16) of the Ouro paper reports 82.4 under an in-house 5-shot CoT, strict-match protocol; its
   LLM-as-judge evaluation (Table 17) is used for the Thinking-model reasoning benchmarks such as AIME, not
@@ -496,21 +505,21 @@
   A/B/C/D decision margin; this may reflect a mismatch between the adaptation proxy and the evaluation
   decision rather than a lack of entropy in the output format itself. This is a hard-skewed subject subset,
   so we do not report an absolute MMLU number against the paper's full 57-subject protocol.</p>
-  <p><strong>Scale (Ouro-2.6B).</strong> The patterns are not 1.4B-specific, though they soften at scale
-  (n=200, single lr, so read this as a confirmation, not a headline). The 2.6B baseline reproduces the
-  paper's range on GSM8K (0.838 vs 0.816). The same reasoning-then-overthinking inverse-U appears (baseline
-  accuracy by depth <code>r = 1,2,4,8,16</code>: 0.38, 0.75, <strong>0.82</strong>, 0.805, 0.25), peaking at
-  the trained depth <code>r=4</code>, but the decline is gentler than at 1.4B: <code>r=8</code> barely drops
-  and <code>r=16</code> collapses less deeply (0.25 vs 1.4B's 0.16), so the larger model is more stable under
-  deep looping. Adaptation still helps but needs a scale-appropriate learning rate and buys less. At the
-  1.4B rate a single step <em>collapses</em> the model (GSM8K 0.833 → 0.40; its readout is perturbed ~4× more
-  per step). At a ~4× smaller rate the update is stable and lifts GSM8K accuracy at <code>r=4</code> by
-  <strong>+1.7 points with one step and +3.4 with two</strong> (0.833 → 0.867; the larger model prefers
-  gentler steps), well below 1.4B's ~+8, consistent with its smaller headroom. We treat the "~4×" as an
-  empirical hypothesis, not a derived scaling law.</p>
+  <p><strong>Scale (Ouro-2.6B).</strong> The patterns are not 1.4B-specific, though they soften at scale.
+  Read this as a confirmation, not a headline: each result below comes from a single run at the stated size.
+  The 2.6B baseline falls near the paper's reported GSM8K range under our protocol (0.838 vs 0.816, n=500).
+  In a separate depth sweep (n=200), accuracy peaked at the trained depth and declined under further looping
+  (baseline by depth <code>r = 1,2,4,8,16</code>: 0.38, 0.75, <strong>0.82</strong>, 0.805, 0.25); the
+  decline was gentler than in the 1.4B sweep, with <code>r=16</code> at 0.25 rather than 0.16. A distinct
+  adaptation study (n=300) tested two learning-rate regimes at the trained depth. The 1.4B rate caused a
+  sharp collapse (GSM8K 0.833 → 0.40), consistent with the diagnostic that 2.6B's one-step
+  output-distribution KL was about 4.4× larger than 1.4B's. A learning rate about four times smaller was
+  stable and improved accuracy on the same evaluation set by <strong>+1.7 points at one step and +3.4 at
+  two</strong> (0.833 → 0.850 → 0.867), well below 1.4B's ~+8, consistent with less headroom at this size.
+  We treat the "~4×" learning-rate ratio as an empirical observation, not a derived scaling law.</p>
   <div class="callout"><strong>The picture in one line.</strong> Looped depth buys reasoning up to the
   trained depth then overthinks (general); at that depth a minimal entropy-TTT update helps, best read on
-  the prompt at the trained depth and reset every batch (GSM8K, replicated on MATH); recurrence appears to
+  the prompt at the trained depth and reset every batch (GSM8K, and reappearing on MATH-500); recurrence appears to
   amplify it; and it is a single-shot, generative-reasoning effect, not a universal win.</div>
 
   <h2 id="limits">10. From online adaptation to reusable calibration</h2>
@@ -555,8 +564,9 @@
   better described as a reusable <em>prompt calibration</em> that can be precomputed and cached, together
   with an <em>amortization target</em> that could be distilled into a fixed RMSNorm-scale delta. Under either
   interpretation, the loop's trained depth is where the adaptation signal is most informative. The update is
-  also inexpensive: the adapted scales are a fraction of even a rank-8 LoRA adapter, yet are reused at every
-  recurrent step, so a looped model can be adapted at test time on a small parameter budget. We report this
+  also inexpensive: the adapted scales are a fraction of even a rank-8 LoRA adapter. The 96 in-loop scale
+  vectors are reused at every recurrent step and the final readout scale is applied once after recurrence,
+  so a looped model can be adapted at test time on a small parameter budget. We report this
   low cost as an observation about feasibility; whether it yields a practically useful method is not
   established here, and would require the transfer and confirmatory tests noted below.</p>
 
