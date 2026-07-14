@@ -228,8 +228,9 @@
   fixed-size move along the sign of the gradient, <span class="math">Δφ<sub>1</sub> ≈ −α·sign(∇<sub>φ</sub>
   L<sub>ent</sub>)</span>, with a coordinatewise magnitude that barely depends on how large the gradient is.
   That pins the step's magnitude, but not its direction. What makes the single (<span class="math">s = 1</span>)
-  update <em>cacheable</em> is a separate, empirical fact: its direction is nearly constant across batches
-  (cosine ≈ 0.99, §10), which Adam alone does not imply. The default method uses
+  update <em>cacheable</em> is a separate, empirical fact: the <em>exemplar-only</em> update direction is nearly
+  constant across batches (cosine ≈ 0.99, §10; the full-prompt update is less constant, ≈ 0.91), which Adam
+  alone does not imply. The default method uses
   <span class="math">m = d = 4</span>; the depth-location experiments (§4, §5) vary <span class="math">m</span>
   and <span class="math">d</span> independently.</p>
 
@@ -250,10 +251,9 @@
   trainable during each adaptation episode, roughly <strong>8&times; fewer than a LoRA adapter (<a href="https://arxiv.org/abs/2106.09685">Hu et al.,
   2022</a>) at rank 8</strong> on just the query/value projections (about 38&times; fewer than LoRA-r8 on every linear layer).
   Because a looped model reuses the same 24-layer core, the 96 in-loop scales are felt at every recurrent
-  step (the 97th, final readout scale, once after recurrence), so a very small update goes a long way. Everything this post explores is one of five choices in those lines:
-  the objective (<code>H</code>), the token source (which tokens the signal is read from), the adaptation
-  depth (<code>loop_depth</code>), the reset schedule (<code>saved</code>), and the update size
-  (<code>s</code>, lr).</p>
+  step (the 97th, final readout scale, once after recurrence), so a very small update goes a long way. The
+  experiments vary five choices: the objective, the token source, the adaptation depth, the reset schedule,
+  and the update size.</p>
   <p><strong>Datasets.</strong> GSM8K (grade-school math, our primary benchmark, where our baseline approximately reproduces the reported range; <a href="https://arxiv.org/abs/2110.14168">Cobbe
   et al., 2021</a>), MATH-500 (the 500-problem evaluation subset of harder competition math; <a href="https://arxiv.org/abs/2103.03874">Hendrycks et al., 2021</a>; <a href="https://arxiv.org/abs/2305.20050">Lightman et al., 2023</a>), and a subset of MMLU
   (multiple-choice knowledge; <a href="https://arxiv.org/abs/2009.03300">Hendrycks et al., 2021</a>). Generative math answers are scored with <a href="https://github.com/huggingface/Math-Verify">Math-Verify</a>
