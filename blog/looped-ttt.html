@@ -127,11 +127,14 @@
     climbs to the model's trained loop depth and then <strong>overthinks</strong>. Right at that depth, one
     <strong>batch-episodic</strong>, target-label-free update to 97 RMSNorm scale vectors, computed from
     strict-masked prompt <em>entropy</em>, improves generative math accuracy and beats simply decoding with
-    more recurrent steps. Mapping the design space turns up a few surprises: entropy is a stronger objective
-    than prompt language-model loss; the update must be <em>reset after every batch</em> (letting it
-    accumulate collapses the model); and, uniquely for a loop, signals read at the model's trained recurrence
-    depth are <strong>substantially less harmful in the tested sweeps</strong> than signals read from shallow
-    or overthinking states, though their benefit under deeper decoding varies. On four-shot GSM8K, most of the
+    more recurrent steps. Entropy minimization is already an established adaptation objective (Tent, and
+    recently for LLM reasoning), so the informative questions here are about the loop, not about whether
+    sharpening confidence can help at all. Mapping that design space: entropy beats the prompt
+    language-model-loss alternative in this setting (a direction the wider literature does <em>not</em>
+    settle); the update must be <em>reset after every batch</em> (letting it accumulate collapses the model);
+    and, uniquely for a loop, signals read at the model's trained recurrence depth are <strong>substantially
+    less harmful in the tested sweeps</strong> than signals read from shallow or overthinking states, though
+    their benefit under deeper decoding varies. On four-shot GSM8K, most of the
     measurable gain is a reusable calibration vector derived from the shared demonstrations, capturable with
     no test-time gradient. Both headline effects
     reappear on the tested MATH-500 subset, while the depth/overthinking pattern (but not the entropy-TTT
