@@ -596,6 +596,10 @@
   update can do: the same "read the signal at the competent depth, then decode" strategy could become useful
   at depths where the current model only overthinks. Testing this cheap calibration on such depth-stabilized
   looped models is the direction we consider most promising, and one we have not yet explored.</p>
+  <p>This is the first post in a planned series on adaptation in looped transformers, and it deliberately
+  stays with <em>base</em> models. Applying the same test-time update to RL-tuned reasoning (Thinking)
+  checkpoints, where the test-time compute is spent on long generated traces rather than on the prompt, is a
+  distinct regime we plan to take up in a follow-up post.</p>
 
   <h3>Scope</h3>
   <p>We tuned the recipe's settings by watching GSM8K test accuracy. The model never sees the gold answers,
