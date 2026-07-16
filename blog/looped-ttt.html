@@ -202,9 +202,12 @@
 
   <p><strong>Formally.</strong> Write <span class="math">φ</span> for the RMSNorm (<a href="https://arxiv.org/abs/1910.07467">Zhang &amp; Sennrich, 2019</a>)
   scale vectors. Ouro-1.4B
-  has 24 physical decoder layers; each has four RMSNorm scale vectors (96 in-loop), plus one final readout
-  RMSNorm (the 97th), and the 24-layer core with its 96 in-loop scale vectors is reused at every recurrent
-  step. Let <span class="math">a<sub>t</sub></span>∈{0,1} be the prompt's attention mask. The recurrence and
+  has 24 physical decoder layers; each carries four RMSNorm scale vectors (a sandwich-norm block, 96 in
+  total), plus the core's output RMSNorm (the 97th). All 97 sit <em>inside</em> the recurrence: the
+  24-layer core and its output norm are reapplied at every recurrent step, so every one of the 97 scales
+  is felt at every step. The 97th is applied after the layers within each iteration and its output feeds
+  the next iteration; on the last iteration it is also what feeds the readout, so Ouro has no separate
+  readout norm. Let <span class="math">a<sub>t</sub></span>∈{0,1} be the prompt's attention mask. The recurrence and
   readout, the strict-masked entropy objective, and the episodic update are:</p>
 
   <div class="eq"><span class="b">h<sup>(j+1)</sup> = F<sub>θ,φ</sub>(h<sup>(j)</sup>, x),&nbsp;&nbsp;
@@ -258,8 +261,8 @@
   <strong>198,656 existing RMSNorm-scale scalars</strong> (0.014% of the model) are made temporarily
   trainable during each adaptation episode, roughly <strong>8&times; fewer than a LoRA adapter (<a href="https://arxiv.org/abs/2106.09685">Hu et al.,
   2022</a>) at rank 8</strong> on just the query/value projections (about 38&times; fewer than LoRA-r8 on every linear layer).
-  Because a looped model reuses the same 24-layer core, the 96 in-loop scales are felt at every recurrent
-  step (the 97th, final readout scale, once after recurrence), so a very small update goes a long way. The
+  Because a looped model reuses the same 24-layer core, all 97 scales are felt at every recurrent step, so
+  a very small update goes a long way. The
   experiments vary five choices: the objective, the token source, the adaptation depth, the reset schedule,
   and the update size.</p>
   <p><strong>Datasets.</strong> GSM8K (grade-school math, our primary benchmark, where our baseline approximately reproduces the reported range; <a href="https://arxiv.org/abs/2110.14168">Cobbe
@@ -576,9 +579,9 @@
   better described as a reusable <em>prompt calibration</em> that can be precomputed and cached, together
   with an <em>amortization target</em> that could be distilled into a fixed RMSNorm-scale delta. Under either
   interpretation, the loop's trained depth is where the adaptation signal is most informative. The update is
-  also inexpensive: the adapted scales are a fraction of even a rank-8 LoRA adapter. The 96 in-loop scale
-  vectors are reused at every recurrent step and the final readout scale is applied once after recurrence,
-  so a looped model can be adapted at test time on a small parameter budget. We report this
+  also inexpensive: the adapted scales are a fraction of even a rank-8 LoRA adapter. All 97 scale vectors live inside
+  the recurrence and are reused at every recurrent step, so a looped model can be adapted at test time on
+  a small parameter budget. We report this
   low cost as an observation about feasibility; whether it yields a practically useful method is not
   established here, and would require the transfer and confirmatory tests noted below.</p>
 
