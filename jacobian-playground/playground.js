@@ -18,6 +18,10 @@
     var targetDeterminant = document.getElementById('targetDeterminant');
     var zSlice = document.getElementById('zSlice');
     var zValue = document.getElementById('zValue');
+    var viewAzimuth = document.getElementById('viewAzimuth');
+    var viewElevation = document.getElementById('viewElevation');
+    var azimuthValue = document.getElementById('azimuthValue');
+    var elevationValue = document.getElementById('elevationValue');
     var canvas = document.getElementById('mapCanvas');
     var plotScale = document.getElementById('plotScale');
     var collisionNote = document.getElementById('collisionNote');
@@ -398,10 +402,8 @@
             var verticalLine = [];
             for (var sample = 0; sample < samples; sample += 1) {
                 var moving = -extent + (2 * extent * sample) / (samples - 1);
-                var h = evaluateMap([moving, fixed, z]);
-                var v = evaluateMap([fixed, moving, z]);
-                horizontalLine.push([h[0], h[1]]);
-                verticalLine.push([v[0], v[1]]);
+                horizontalLine.push(evaluateMap([moving, fixed, z]));
+                verticalLine.push(evaluateMap([fixed, moving, z]));
             }
             horizontal.push(horizontalLine);
             vertical.push(verticalLine);
@@ -422,11 +424,37 @@
 
         context.clearRect(0, 0, width, height);
         var z = Number(zSlice.value);
+        var azimuthDegrees = Number(viewAzimuth.value) || 0;
+        var elevationDegrees = Number(viewElevation.value) || 0;
+        var rotatedView = azimuthDegrees !== 0 || elevationDegrees !== 0;
+        var azimuth = azimuthDegrees * Math.PI / 180;
+        var elevation = elevationDegrees * Math.PI / 180;
+        var cosA = Math.cos(azimuth);
+        var sinA = Math.sin(azimuth);
+        var cosB = Math.cos(elevation);
+        var sinB = Math.sin(elevation);
+
+        // Orthographic view rotation of the output space: azimuth spins the
+        // u₁u₂ plane, elevation tilts u₃ into view. Display only — the
+        // rotation never enters the pipeline. α = β = 0 is the plain (u₁, u₂)
+        // projection.
+        function viewProject(u) {
+            for (var axis = 0; axis < 3; axis += 1) {
+                if (!Number.isFinite(u[axis]) || Math.abs(u[axis]) >= 1e150) return [Infinity, Infinity];
+            }
+            return [
+                cosA * u[0] + sinA * u[1],
+                cosB * (cosA * u[1] - sinA * u[0]) + sinB * u[2]
+            ];
+        }
+
         var grid = sampleGrid(z);
-        var allPoints = grid.horizontal.concat(grid.vertical).reduce(function (points, line) {
+        var horizontal = grid.horizontal.map(function (line) { return line.map(viewProject); });
+        var vertical = grid.vertical.map(function (line) { return line.map(viewProject); });
+        var allPoints = horizontal.concat(vertical).reduce(function (points, line) {
             return points.concat(line);
         }, []).filter(function (point) {
-            return point.every(function (value) { return Number.isFinite(value) && Math.abs(value) < 1e150; });
+            return point.every(Number.isFinite);
         });
 
         if (!allPoints.length) {
@@ -502,8 +530,8 @@
 
         context.lineJoin = 'round';
         context.lineCap = 'round';
-        strokeLines(grid.horizontal, cssColor('--accent'));
-        strokeLines(grid.vertical, cssColor('--cyan'));
+        strokeLines(horizontal, cssColor('--accent'));
+        strokeLines(vertical, cssColor('--cyan'));
         context.globalAlpha = 1;
 
         var beyondView = allPoints.filter(function (point) {
@@ -512,11 +540,16 @@
         }).length;
         var xLabelRange = robustRange(xs);
         var yLabelRange = robustRange(ys);
-        plotScale.textContent = (warped ? 'asinh-compressed view · ' : '')
-            + 'u₁ ' + formatNumber(xLabelRange[0]) + '…' + formatNumber(xLabelRange[1])
-            + ' · u₂ ' + formatNumber(yLabelRange[0]) + '…' + formatNumber(yLabelRange[1])
+        var axisOne = rotatedView ? 'p₁' : 'u₁';
+        var axisTwo = rotatedView ? 'p₂' : 'u₂';
+        plotScale.textContent = (rotatedView ? 'view ' + azimuthDegrees + '°/' + elevationDegrees + '° · ' : '')
+            + (warped ? 'asinh-compressed view · ' : '')
+            + axisOne + ' ' + formatNumber(xLabelRange[0]) + '…' + formatNumber(xLabelRange[1])
+            + ' · ' + axisTwo + ' ' + formatNumber(yLabelRange[0]) + '…' + formatNumber(yLabelRange[1])
             + (beyondView ? ' · ' + beyondView + ' of ' + allPoints.length + ' beyond view' : '');
-        canvas.setAttribute('aria-label', 'Deformed coordinate grid at z equals ' + z.toFixed(2) + '; the composed map has constant Jacobian determinant ' + rationalText(currentDeterminant()));
+        canvas.setAttribute('aria-label', 'Deformed coordinate grid at z equals ' + z.toFixed(2)
+            + (rotatedView ? ', viewed from azimuth ' + azimuthDegrees + ' degrees and elevation ' + elevationDegrees + ' degrees' : '')
+            + '; the composed map has constant Jacobian determinant ' + rationalText(currentDeterminant()));
     }
 
     function queuePlot() {
@@ -553,11 +586,19 @@
         });
     });
 
-    // The z-slider only moves the plotted slice; skip rebuilding the ledger DOM.
+    // The z- and view sliders only move the plotted slice; skip rebuilding the ledger DOM.
     zSlice.addEventListener('input', function () {
         zValue.textContent = Number(zSlice.value).toFixed(2);
         queuePlot();
     });
+
+    function syncViewControls() {
+        azimuthValue.textContent = viewAzimuth.value + '°';
+        elevationValue.textContent = viewElevation.value + '°';
+        queuePlot();
+    }
+    viewAzimuth.addEventListener('input', syncViewControls);
+    viewElevation.addEventListener('input', syncViewControls);
 
     shearAmount.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') addShear('shear12');

@@ -287,6 +287,20 @@ button, input, select { font: inherit; }
 
 .plot-header label { width: min(220px, 42%); }
 
+.plot-sliders {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px 14px;
+}
+
+.plot-sliders label {
+    width: auto;
+    flex: 1 1 120px;
+    max-width: 170px;
+}
+
 .plot-header input[type="range"] {
     width: 100%;
     accent-color: var(--accent);
@@ -324,12 +338,142 @@ button, input, select { font: inherit; }
 .vertical-swatch { background: var(--cyan); }
 
 .lab-collision,
+.lab-howto,
+.lab-examples,
 .lab-ledger,
 .lab-equations,
 .lab-references {
     margin-top: 62px;
     padding-top: 26px;
     border-top: 1px solid var(--border-strong);
+}
+
+.howto-list {
+    max-width: 850px;
+    margin: 0;
+    padding-left: 24px;
+    display: grid;
+    gap: 14px;
+    color: var(--text-soft);
+    font-size: 0.88rem;
+}
+
+.howto-list li::marker {
+    color: var(--accent);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+}
+
+.howto-list strong {
+    color: var(--text);
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 600;
+}
+
+.howto-list code {
+    color: var(--text);
+    font-size: 0.82em;
+}
+
+.examples-lede {
+    max-width: 790px;
+    margin: 0 0 22px;
+    color: var(--text-soft);
+    font-size: 0.92rem;
+}
+
+.example-stack { display: grid; gap: 26px; }
+
+.example-card {
+    display: grid;
+    gap: 14px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    box-shadow: var(--shadow-card);
+}
+
+.example-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.example-head h3 {
+    margin: 0;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.example-kicker {
+    color: var(--text-mute);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.example-pipeline {
+    color: var(--text);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+.example-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px 18px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-soft);
+}
+
+.example-meta div { display: grid; gap: 2px; min-width: 0; }
+
+.example-meta dt {
+    color: var(--text-mute);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.example-meta dd {
+    margin: 0;
+    color: var(--text);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+.example-prose {
+    margin: 0;
+    max-width: 790px;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+}
+
+.example-plot {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.example-caption {
+    margin: 0;
+    color: var(--text-mute);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.65rem;
+    overflow-wrap: anywhere;
 }
 
 .ref-mark {
@@ -555,6 +699,14 @@ button, input, select { font: inherit; }
     }
 
     .collision-grid { grid-template-columns: 1fr; }
+
+    .plot-sliders label { max-width: 100%; }
+
+    .example-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
 
     .pipeline-list li {
         grid-template-columns: 32px 1fr 72px;
