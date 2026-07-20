@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacobian Map Playground — Alvin Zhang</title>
+    <meta name="description" content="An interactive polynomial-map playground for composing Jacobian-one maps, rescaling their determinant, and exploring a live 2D slice.">
+    <meta name="author" content="Alvin (Bowei) Zhang">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Jacobian Map Playground">
+    <meta property="og:description" content="Compose polynomial maps, track their Jacobian determinant, and watch a 2D slice deform.">
+    <meta property="og:url" content="https://alvinzh04.github.io/jacobian-playground/">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ff2b2b'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-weight='700' font-size='28' fill='%23ffffff'%3EJ%3C/text%3E%3C/svg%3E">
+
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', stored || (prefersDark ? 'dark' : 'light'));
+            } catch (e) {}
+        })();
+    </script>
+
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="playground.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-1" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-2" aria-hidden="true"></div>
+
+    <header class="lab-nav">
+        <a class="lab-back" href="../">← Alvin Zhang</a>
+        <button class="theme-toggle" type="button" id="themeToggle" aria-label="Toggle dark mode">
+            <span class="theme-icon" aria-hidden="true">◐</span>
+            <span id="themeLabel">Theme</span>
+        </button>
+    </header>
+
+    <main class="lab-shell">
+        <section class="lab-hero">
+            <p class="lab-kicker">Interactive note / 01</p>
+            <h1>Compose the map.<br><span>Keep the determinant honest.</span></h1>
+            <p class="lab-intro">
+                Start from the three-variable polynomial map <strong>G</strong> with
+                <strong>det&nbsp;J<sub>G</sub> = 1</strong>. Add polynomial shears, compose another copy of G,
+                or rescale one output. The chain rule keeps an exact determinant ledger while the plot shows
+                a two-dimensional slice of the resulting map.
+            </p>
+        </section>
+
+        <section class="lab-stats" aria-label="Current map summary">
+            <div class="lab-stat">
+                <span class="lab-stat-label">Jacobian determinant</span>
+                <strong id="determinantValue">1</strong>
+                <span id="orientationValue">volume preserving</span>
+            </div>
+            <div class="lab-stat">
+                <span class="lab-stat-label">Composition depth</span>
+                <strong id="depthValue">1</strong>
+                <span id="stepValue">base map only</span>
+            </div>
+            <div class="lab-stat">
+                <span class="lab-stat-label">Degree bound</span>
+                <strong id="degreeValue">7</strong>
+                <span>highest total degree</span>
+            </div>
+        </section>
+
+        <section class="lab-workspace" aria-label="Polynomial map controls and visualization">
+            <div class="lab-controls">
+                <div class="lab-section-heading">
+                    <span>01 /</span>
+                    <h2>Build a composition</h2>
+                </div>
+
+                <div class="control-pair">
+                    <label for="shearAmount">Shear amount <code>t</code>
+                        <input id="shearAmount" type="text" inputmode="decimal" value="1/2" autocomplete="off">
+                    </label>
+                    <label for="shearPower">Power <code>m</code>
+                        <select id="shearPower">
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="control-actions">
+                    <button type="button" data-action="shear12">
+                        <span>Add output shear</span>
+                        <code>u₁ ← u₁ + t·u₂ᵐ</code>
+                    </button>
+                    <button type="button" data-action="shear23">
+                        <span>Add output shear</span>
+                        <code>u₂ ← u₂ + t·u₃ᵐ</code>
+                    </button>
+                    <button type="button" data-action="compose">
+                        <span>Compose another G</span>
+                        <code>F ← G ∘ F</code>
+                    </button>
+                </div>
+
+                <div class="rescale-control">
+                    <label for="targetDeterminant">Desired determinant <code>k</code>
+                        <input id="targetDeterminant" type="text" inputmode="decimal" value="6" autocomplete="off">
+                    </label>
+                    <button type="button" class="primary-action" data-action="rescale">Rescale output 1</button>
+                </div>
+
+                <div class="utility-actions">
+                    <button type="button" data-action="demo">Load a wild example</button>
+                    <button type="button" data-action="undo">Undo last step</button>
+                    <button type="button" data-action="reset">Reset</button>
+                </div>
+
+                <p class="control-message" id="controlMessage" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="lab-plot-panel">
+                <div class="plot-header">
+                    <div>
+                        <span class="plot-eyebrow">Live slice</span>
+                        <h2><code>(x, y)</code> grid at fixed <code>z</code></h2>
+                    </div>
+                    <label for="zSlice">z = <output id="zValue">0.00</output>
+                        <input id="zSlice" type="range" min="-0.5" max="0.5" value="0" step="0.05">
+                    </label>
+                </div>
+                <canvas id="mapCanvas" width="900" height="620" role="img" aria-label="Deformed coordinate grid under the current polynomial map"></canvas>
+                <div class="plot-legend" aria-hidden="true">
+                    <span><i class="horizontal-swatch"></i> horizontal lines</span>
+                    <span><i class="vertical-swatch"></i> vertical lines</span>
+                    <span id="plotScale">view auto-fitted</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="lab-ledger">
+            <div class="lab-section-heading">
+                <span>02 /</span>
+                <h2>Determinant ledger</h2>
+            </div>
+            <div class="pipeline-expression" id="pipelineExpression">F = G</div>
+            <ol class="pipeline-list" id="pipelineList"></ol>
+            <div class="determinant-proof">
+                <span>Chain rule</span>
+                <code id="determinantProof">det J_F = 1</code>
+            </div>
+        </section>
+
+        <section class="lab-equations">
+            <div class="lab-section-heading">
+                <span>03 /</span>
+                <h2>The base map</h2>
+            </div>
+            <div class="equation-stack" aria-label="The three components of the base polynomial map G">
+                <code>G₁(x,y,z) = (1 + 2xy)³z + y²(1 + 2xy)(4 + 6xy)</code>
+                <code>G₂(x,y,z) = y + 6x(1 + 2xy)²z + 6xy²(4 + 6xy)</code>
+                <code>G₃(x,y,z) = −x + 3x²y + 2x³z</code>
+            </div>
+            <p>
+                The displayed composition stays in factored pipeline form because expanding repeated copies of G
+                grows very quickly. Every stage is still a polynomial map, and its determinant follows exactly from
+                the stage factors shown above.
+            </p>
+        </section>
+
+        <footer class="lab-footer">
+            <span>Built as a computational note by Alvin Zhang.</span>
+            <a href="https://en.wikipedia.org/wiki/Jacobian_conjecture" target="_blank" rel="noopener">About the Jacobian conjecture ↗</a>
+        </footer>
+    </main>
+
+    <script src="playground.js"></script>
+</body>
+</html>
