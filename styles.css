@@ -197,7 +197,7 @@ a:hover {
     height: 180px;
     border-radius: 50%;
     object-fit: cover;
-    object-position: center 22%;
+    object-position: center;
     border: 1px solid var(--border-strong);
     box-shadow: 0 8px 30px rgba(0,0,0,0.10);
     display: block;
