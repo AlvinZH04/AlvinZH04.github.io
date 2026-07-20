@@ -325,10 +325,35 @@ button, input, select { font: inherit; }
 
 .lab-collision,
 .lab-ledger,
-.lab-equations {
+.lab-equations,
+.lab-references {
     margin-top: 62px;
     padding-top: 26px;
     border-top: 1px solid var(--border-strong);
+}
+
+.ref-mark {
+    border-bottom: none;
+    color: var(--accent);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72em;
+    vertical-align: super;
+}
+
+.reference-list {
+    max-width: 790px;
+    margin: 0;
+    padding-left: 24px;
+    display: grid;
+    gap: 12px;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+}
+
+.reference-list li::marker {
+    color: var(--accent);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.72rem;
 }
 
 .collision-lede {

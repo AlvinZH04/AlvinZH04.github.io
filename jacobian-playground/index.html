@@ -200,9 +200,10 @@
                 <code>G₃(x,y,z) = −x + 3x²y + 2x³z</code>
             </div>
             <p>
-                G is the map F announced by Levent Alpöge in July 2026 — with the question posed by Akhil Mathew
-                and the search carried out with Claude (Fable) — in rescaled coordinates:
-                G&nbsp;=&nbsp;diag(¼,&nbsp;½,&nbsp;−½)&nbsp;∘&nbsp;F&nbsp;∘&nbsp;diag(1,&nbsp;2,&nbsp;4), which moves
+                G is the map F announced by Levent Alpöge in July 2026 <a class="ref-mark" href="#ref-1">[1]</a> —
+                with the question posed by Akhil Mathew and the search carried out with Claude (Fable) — in the
+                determinant-one form due to N8Programs <a class="ref-mark" href="#ref-2">[2]</a>:
+                G&nbsp;=&nbsp;diag(¼,&nbsp;½,&nbsp;−½)&nbsp;∘&nbsp;F&nbsp;∘&nbsp;diag(1,&nbsp;2,&nbsp;4) moves
                 det&nbsp;J from −2 to exactly 1 while changing nothing essential. Every fiber of G has three, one,
                 or zero points, and the image misses only a smooth curve. G is étale but not proper: preimages can
                 escape to infinity while their images converge, and properness is precisely the loophole — a
@@ -212,12 +213,42 @@
             <p>
                 The displayed composition stays in factored pipeline form because expanding repeated copies of G
                 grows very quickly. Every stage is still a polynomial map, and its determinant follows exactly from
-                the stage factors shown above. See the
-                <a href="https://x.com/__alpoge__/status/2079028340955197566" target="_blank" rel="noopener">announcement</a>
-                and the
-                <a href="https://www.ulam.ai/research/jacobian.pdf" target="_blank" rel="noopener">verification note</a>
-                for the fiber-by-fiber geometry.
+                the stage factors shown above. See the verification note
+                <a class="ref-mark" href="#ref-3">[3]</a> for the fiber-by-fiber geometry.
             </p>
+        </section>
+
+        <section class="lab-references" id="references">
+            <div class="lab-section-heading">
+                <span>05 /</span>
+                <h2>References</h2>
+            </div>
+            <ol class="reference-list">
+                <li id="ref-1">
+                    L. Alpöge.
+                    <a href="https://x.com/__alpoge__/status/2079028340955197566" target="_blank" rel="noopener">&ldquo;Hello there the Jacobian conjecture is false.&rdquo;</a>
+                    X, July 2026. The announcement; credits Akhil Mathew for the question and Claude (Fable) for the search.
+                </li>
+                <li id="ref-2">
+                    N8Programs.
+                    <a href="https://x.com/N8Programs/status/2079061392649302185" target="_blank" rel="noopener">Determinant-one form of the counterexample.</a>
+                    X, July 2026. The det&nbsp;J&nbsp;=&nbsp;1 convention used for the base map G on this page.
+                </li>
+                <li id="ref-3">
+                    <a href="https://www.ulam.ai/research/jacobian.pdf" target="_blank" rel="noopener">&ldquo;A Counterexample to the Jacobian Conjecture.&rdquo;</a>
+                    Verification note, ulam.ai, July 2026. Exact determinant and the three-point fiber; the full fiber
+                    count, image, and nonproperness geometry; families of every generic degree ≥ 3.
+                </li>
+                <li id="ref-4">
+                    A. Gallagher.
+                    <a href="https://jacobianfun.org/jacobian-explained" target="_blank" rel="noopener">&ldquo;The Jacobian counterexample, explained.&rdquo;</a>
+                    jacobianfun.org, July 2026. An accessible walkthrough with reproducible symbolic checks.
+                </li>
+                <li id="ref-5">
+                    O.-H. Keller. &ldquo;Ganze Cremona-Transformationen.&rdquo;
+                    <em>Monatsh. Math. Phys.</em> 47 (1939), 299–306. The original conjecture.
+                </li>
+            </ol>
         </section>
 
         <footer class="lab-footer">
