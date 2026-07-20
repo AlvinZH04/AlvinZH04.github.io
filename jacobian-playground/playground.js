@@ -600,6 +600,35 @@
     viewAzimuth.addEventListener('input', syncViewControls);
     viewElevation.addEventListener('input', syncViewControls);
 
+    // Drag the plot to rotate the view; the sliders remain for precision
+    // and keyboard access.
+    var dragOrigin = null;
+    canvas.addEventListener('pointerdown', function (event) {
+        dragOrigin = {
+            x: event.clientX,
+            y: event.clientY,
+            azimuth: Number(viewAzimuth.value) || 0,
+            elevation: Number(viewElevation.value) || 0
+        };
+        if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+        canvas.classList.add('is-dragging');
+        event.preventDefault();
+    });
+    canvas.addEventListener('pointermove', function (event) {
+        if (!dragOrigin) return;
+        var azimuth = Math.round(dragOrigin.azimuth + (event.clientX - dragOrigin.x) * 0.4);
+        var elevation = Math.round(dragOrigin.elevation - (event.clientY - dragOrigin.y) * 0.4);
+        viewAzimuth.value = String(Math.max(-180, Math.min(180, azimuth)));
+        viewElevation.value = String(Math.max(-90, Math.min(90, elevation)));
+        syncViewControls();
+    });
+    ['pointerup', 'pointercancel'].forEach(function (type) {
+        canvas.addEventListener(type, function () {
+            dragOrigin = null;
+            canvas.classList.remove('is-dragging');
+        });
+    });
+
     shearAmount.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') addShear('shear12');
     });

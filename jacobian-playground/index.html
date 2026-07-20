@@ -48,7 +48,7 @@
     <main class="lab-shell">
         <section class="lab-hero">
             <p class="lab-kicker">Interactive note / 01</p>
-            <h1>Compose the counterexample.<br><span>Keep the determinant honest.</span></h1>
+            <h1>Compose the counterexample.<br><span>Keep the determinant exact.</span></h1>
             <p class="lab-intro">
                 The base map <strong>G</strong> below is Alpöge&rsquo;s counterexample to the
                 <a href="https://en.wikipedia.org/wiki/Jacobian_conjecture" target="_blank" rel="noopener">Jacobian conjecture</a>,
@@ -140,10 +140,10 @@
                             <input id="zSlice" type="range" min="-0.5" max="0.5" value="0" step="0.05">
                         </label>
                         <label for="viewAzimuth">view α = <output id="azimuthValue">0°</output>
-                            <input id="viewAzimuth" type="range" min="-180" max="180" value="0" step="5">
+                            <input id="viewAzimuth" type="range" min="-180" max="180" value="0" step="1">
                         </label>
                         <label for="viewElevation">view β = <output id="elevationValue">0°</output>
-                            <input id="viewElevation" type="range" min="-90" max="90" value="0" step="5">
+                            <input id="viewElevation" type="range" min="-90" max="90" value="0" step="1">
                         </label>
                     </div>
                 </div>
@@ -156,37 +156,9 @@
             </div>
         </section>
 
-        <section class="lab-collision">
-            <div class="lab-section-heading">
-                <span>02 /</span>
-                <h2>The collision</h2>
-            </div>
-            <p class="collision-lede">
-                These three points share one image under G. Every operation above is applied <em>after</em> G,
-                so no composition you build here can pull them apart — while the ledger keeps the determinant
-                a nonzero constant. A Keller map that merges points is exactly what the Jacobian conjecture
-                said could not exist. The images update live, in exact arithmetic, as you edit the pipeline.
-            </p>
-            <div class="collision-grid">
-                <div class="collision-card">
-                    <span class="collision-input">F(0, 0, −1/16)</span>
-                    <code class="collision-image">(-1/16, 0, 0)</code>
-                </div>
-                <div class="collision-card">
-                    <span class="collision-input">F(1, −3/4, 13/8)</span>
-                    <code class="collision-image">(-1/16, 0, 0)</code>
-                </div>
-                <div class="collision-card">
-                    <span class="collision-input">F(−1, 3/4, 13/8)</span>
-                    <code class="collision-image">(-1/16, 0, 0)</code>
-                </div>
-            </div>
-            <p class="collision-note" id="collisionNote">All three images agree while det J_F = 1 everywhere: a nonzero constant determinant without injectivity.</p>
-        </section>
-
         <section class="lab-howto">
             <div class="lab-section-heading">
-                <span>03 /</span>
+                <span>02 /</span>
                 <h2>How to use this playground</h2>
             </div>
             <ol class="howto-list">
@@ -213,12 +185,40 @@
                     The <em>ledger</em> multiplies the stage factors into <code>det J_F</code> in exact rational
                     arithmetic; the <em>degree</em> stat is an upper bound on total degree; the <em>plot</em> shows the
                     image of an (x, y) grid at the slider&rsquo;s z, switching to an asinh-compressed view when values
-                    spread over many orders of magnitude — the <em>view α/β</em> sliders orbit the image in output
-                    space (display only; rotation never enters the pipeline or the ledger); and the
-                    <em>collision panel</em> re-evaluates the three witness points exactly — their images stay
-                    identical no matter what you build.
+                    spread over many orders of magnitude — drag the plot with the mouse, or use the
+                    <em>view α/β</em> sliders, to orbit the image in output space (display only; rotation never
+                    enters the pipeline or the ledger); and the <em>collision panel</em> re-evaluates the three
+                    witness points exactly — their images stay identical no matter what you build.
                 </li>
             </ol>
+        </section>
+
+        <section class="lab-collision">
+            <div class="lab-section-heading">
+                <span>03 /</span>
+                <h2>The collision</h2>
+            </div>
+            <p class="collision-lede">
+                These three points share one image under G. Every operation above is applied <em>after</em> G,
+                so no composition you build here can pull them apart — while the ledger keeps the determinant
+                a nonzero constant. A Keller map that merges points is exactly what the Jacobian conjecture
+                said could not exist. The images update live, in exact arithmetic, as you edit the pipeline.
+            </p>
+            <div class="collision-grid">
+                <div class="collision-card">
+                    <span class="collision-input">F(0, 0, −1/16)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+                <div class="collision-card">
+                    <span class="collision-input">F(1, −3/4, 13/8)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+                <div class="collision-card">
+                    <span class="collision-input">F(−1, 3/4, 13/8)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+            </div>
+            <p class="collision-note" id="collisionNote">All three images agree while det J_F = 1 everywhere: a nonzero constant determinant without injectivity.</p>
         </section>
 
         <section class="lab-examples">

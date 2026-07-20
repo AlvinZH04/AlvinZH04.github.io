@@ -313,7 +313,11 @@ button, input, select { font: inherit; }
     border: 1px solid var(--border);
     border-radius: 4px;
     background: var(--bg-soft);
+    cursor: grab;
+    touch-action: none;
 }
+
+#mapCanvas.is-dragging { cursor: grabbing; }
 
 .plot-legend {
     display: flex;
@@ -630,10 +634,10 @@ button, input, select { font: inherit; }
 }
 
 .equation-stack code {
-    padding: 14px 16px;
+    padding: 15px 18px;
     border-bottom: 1px solid var(--border);
     color: var(--text);
-    font-size: 0.76rem;
+    font-size: clamp(0.88rem, 1.6vw, 0.98rem);
     overflow-wrap: anywhere;
 }
 
