@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jacobian Map Playground — Alvin Zhang</title>
-    <meta name="description" content="An interactive polynomial-map playground for composing Jacobian-one maps, rescaling their determinant, and exploring a live 2D slice.">
+    <title>Jacobian Counterexample Playground — Alvin Zhang</title>
+    <meta name="description" content="An interactive exhibit of Alpöge's July 2026 counterexample to the Jacobian conjecture: compose it with shears and rescalings, keep an exact determinant ledger, and watch three points no composition can separate.">
     <meta name="author" content="Alvin (Bowei) Zhang">
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Jacobian Map Playground">
-    <meta property="og:description" content="Compose polynomial maps, track their Jacobian determinant, and watch a 2D slice deform.">
+    <meta property="og:title" content="Jacobian Counterexample Playground">
+    <meta property="og:description" content="The Jacobian conjecture fell in July 2026. Compose the counterexample live: constant determinant, no inverse.">
     <meta property="og:url" content="https://alvinzh04.github.io/jacobian-playground/">
+    <link rel="canonical" href="https://alvinzh04.github.io/jacobian-playground/">
     <meta name="twitter:card" content="summary">
 
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ff2b2b'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-weight='700' font-size='28' fill='%23ffffff'%3EJ%3C/text%3E%3C/svg%3E">
@@ -47,12 +48,15 @@
     <main class="lab-shell">
         <section class="lab-hero">
             <p class="lab-kicker">Interactive note / 01</p>
-            <h1>Compose the map.<br><span>Keep the determinant honest.</span></h1>
+            <h1>Compose the counterexample.<br><span>Keep the determinant honest.</span></h1>
             <p class="lab-intro">
-                Start from the three-variable polynomial map <strong>G</strong> with
-                <strong>det&nbsp;J<sub>G</sub> = 1</strong>. Add polynomial shears, compose another copy of G,
-                or rescale one output. The chain rule keeps an exact determinant ledger while the plot shows
-                a two-dimensional slice of the resulting map.
+                The base map <strong>G</strong> below is Alpöge&rsquo;s counterexample to the
+                <a href="https://en.wikipedia.org/wiki/Jacobian_conjecture" target="_blank" rel="noopener">Jacobian conjecture</a>,
+                announced in July 2026 and rescaled here so that <strong>det&nbsp;J<sub>G</sub>&nbsp;=&nbsp;1</strong>
+                exactly, at every point of ℂ³ — even though G is not injective. Add polynomial shears, compose
+                another copy of G, or rescale one output. The chain rule keeps an exact determinant ledger, the
+                plot shows a live two-dimensional slice, and the three-point collision below survives anything
+                you build.
             </p>
         </section>
 
@@ -70,7 +74,7 @@
             <div class="lab-stat">
                 <span class="lab-stat-label">Degree bound</span>
                 <strong id="degreeValue">7</strong>
-                <span>highest total degree</span>
+                <span>bound on total degree</span>
             </div>
         </section>
 
@@ -117,7 +121,7 @@
                 </div>
 
                 <div class="utility-actions">
-                    <button type="button" data-action="demo">Load a wild example</button>
+                    <button type="button" data-action="demo">Load a worked example</button>
                     <button type="button" data-action="undo">Undo last step</button>
                     <button type="button" data-action="reset">Reset</button>
                 </div>
@@ -136,21 +140,49 @@
                     </label>
                 </div>
                 <canvas id="mapCanvas" width="900" height="620" role="img" aria-label="Deformed coordinate grid under the current polynomial map"></canvas>
-                <div class="plot-legend" aria-hidden="true">
-                    <span><i class="horizontal-swatch"></i> horizontal lines</span>
-                    <span><i class="vertical-swatch"></i> vertical lines</span>
+                <div class="plot-legend">
+                    <span><i class="horizontal-swatch" aria-hidden="true"></i> horizontal lines</span>
+                    <span><i class="vertical-swatch" aria-hidden="true"></i> vertical lines</span>
                     <span id="plotScale">view auto-fitted</span>
                 </div>
             </div>
         </section>
 
-        <section class="lab-ledger">
+        <section class="lab-collision">
             <div class="lab-section-heading">
                 <span>02 /</span>
+                <h2>The collision</h2>
+            </div>
+            <p class="collision-lede">
+                These three points share one image under G. Every operation above is applied <em>after</em> G,
+                so no composition you build here can pull them apart — while the ledger keeps the determinant
+                a nonzero constant. A Keller map that merges points is exactly what the Jacobian conjecture
+                said could not exist. The images update live, in exact arithmetic, as you edit the pipeline.
+            </p>
+            <div class="collision-grid">
+                <div class="collision-card">
+                    <span class="collision-input">F(0, 0, −1/16)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+                <div class="collision-card">
+                    <span class="collision-input">F(1, −3/4, 13/8)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+                <div class="collision-card">
+                    <span class="collision-input">F(−1, 3/4, 13/8)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+            </div>
+            <p class="collision-note" id="collisionNote">All three images agree while det J_F = 1 everywhere: a nonzero constant determinant without injectivity.</p>
+        </section>
+
+        <section class="lab-ledger">
+            <div class="lab-section-heading">
+                <span>03 /</span>
                 <h2>Determinant ledger</h2>
             </div>
             <div class="pipeline-expression" id="pipelineExpression">F = G</div>
-            <ol class="pipeline-list" id="pipelineList"></ol>
+            <ol class="pipeline-list" id="pipelineList" role="list"></ol>
             <div class="determinant-proof">
                 <span>Chain rule</span>
                 <code id="determinantProof">det J_F = 1</code>
@@ -159,7 +191,7 @@
 
         <section class="lab-equations">
             <div class="lab-section-heading">
-                <span>03 /</span>
+                <span>04 /</span>
                 <h2>The base map</h2>
             </div>
             <div class="equation-stack" aria-label="The three components of the base polynomial map G">
@@ -168,14 +200,29 @@
                 <code>G₃(x,y,z) = −x + 3x²y + 2x³z</code>
             </div>
             <p>
+                G is the map F announced by Levent Alpöge in July 2026 — with the question posed by Akhil Mathew
+                and the search carried out with Claude (Fable) — in rescaled coordinates:
+                G&nbsp;=&nbsp;diag(¼,&nbsp;½,&nbsp;−½)&nbsp;∘&nbsp;F&nbsp;∘&nbsp;diag(1,&nbsp;2,&nbsp;4), which moves
+                det&nbsp;J from −2 to exactly 1 while changing nothing essential. Every fiber of G has three, one,
+                or zero points, and the image misses only a smooth curve. G is étale but not proper: preimages can
+                escape to infinity while their images converge, and properness is precisely the loophole — a
+                <em>proper</em> Keller map is a polynomial automorphism. The construction falsifies the conjecture
+                in every dimension n&nbsp;≥&nbsp;3; dimension two remains open.
+            </p>
+            <p>
                 The displayed composition stays in factored pipeline form because expanding repeated copies of G
                 grows very quickly. Every stage is still a polynomial map, and its determinant follows exactly from
-                the stage factors shown above.
+                the stage factors shown above. See the
+                <a href="https://x.com/__alpoge__/status/2079028340955197566" target="_blank" rel="noopener">announcement</a>
+                and the
+                <a href="https://www.ulam.ai/research/jacobian.pdf" target="_blank" rel="noopener">verification note</a>
+                for the fiber-by-fiber geometry.
             </p>
         </section>
 
         <footer class="lab-footer">
             <span>Built as a computational note by Alvin Zhang.</span>
+            <a href="https://www.ulam.ai/research/jacobian.pdf" target="_blank" rel="noopener">Verification note (PDF) ↗</a>
             <a href="https://en.wikipedia.org/wiki/Jacobian_conjecture" target="_blank" rel="noopener">About the Jacobian conjecture ↗</a>
         </footer>
     </main>

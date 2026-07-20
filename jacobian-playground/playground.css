@@ -94,6 +94,7 @@ button, input, select { font: inherit; }
     font-size: clamp(1.8rem, 4vw, 2.7rem);
     font-weight: 600;
     line-height: 1.1;
+    white-space: nowrap;
     text-overflow: ellipsis;
 }
 
@@ -113,6 +114,7 @@ button, input, select { font: inherit; }
 .lab-plot-panel {
     border: 1px solid var(--border);
     border-radius: 5px;
+    background: var(--surface);
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     box-shadow: var(--shadow-card);
 }
@@ -321,11 +323,60 @@ button, input, select { font: inherit; }
 .horizontal-swatch { background: var(--accent); }
 .vertical-swatch { background: var(--cyan); }
 
+.lab-collision,
 .lab-ledger,
 .lab-equations {
     margin-top: 62px;
     padding-top: 26px;
     border-top: 1px solid var(--border-strong);
+}
+
+.collision-lede {
+    max-width: 790px;
+    margin: 0 0 22px;
+    color: var(--text-soft);
+    font-size: 0.92rem;
+}
+
+.collision-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.collision-card {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    box-shadow: var(--shadow-card);
+}
+
+.collision-input {
+    color: var(--text-mute);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+}
+
+.collision-image {
+    color: var(--text);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.collision-note {
+    margin: 18px 0 0;
+    padding: 14px 16px;
+    border-left: 3px solid var(--cyan);
+    background: var(--surface-2);
+    color: var(--text-soft);
+    font-size: 0.82rem;
 }
 
 .pipeline-expression {
@@ -472,6 +523,13 @@ button, input, select { font: inherit; }
     .plot-header label { width: 100%; }
     #mapCanvas { height: 390px; }
     .lab-plot-panel { min-height: 0; }
+
+    .utility-actions button {
+        padding: 10px 12px;
+        font-size: 0.74rem;
+    }
+
+    .collision-grid { grid-template-columns: 1fr; }
 
     .pipeline-list li {
         grid-template-columns: 32px 1fr 72px;
