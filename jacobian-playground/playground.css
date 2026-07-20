@@ -670,7 +670,8 @@ button, input, select { font: inherit; }
     .lab-shell { width: min(100% - 28px, 1180px); }
 
     .lab-shell { padding-top: 38px; }
-    .lab-hero h1 { font-size: clamp(2.65rem, 14vw, 4.5rem); }
+    /* 14vw let "counterexample." overflow a 375px viewport; 12vw fits. */
+    .lab-hero h1 { font-size: clamp(2.2rem, 12vw, 4.5rem); }
 
     .lab-stats { grid-template-columns: 1fr; }
     .lab-stat,

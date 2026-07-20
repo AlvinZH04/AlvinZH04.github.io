@@ -538,14 +538,19 @@
             var projected = project(point);
             return projected[0] < 0 || projected[0] > width || projected[1] < 0 || projected[1] > height;
         }).length;
-        var xLabelRange = robustRange(xs);
-        var yLabelRange = robustRange(ys);
+        // Report the data, not the drawing window: a constant axis (e.g. u₁
+        // after a zero rescale) is padded to [-1, 1] for projection only, and
+        // should read as "u₁ = 0" rather than a fake range.
+        function rangeLabel(sorted, axisName) {
+            if (sorted[0] === sorted[sorted.length - 1]) return axisName + ' = ' + formatNumber(sorted[0]);
+            var range = robustRange(sorted);
+            return axisName + ' ' + formatNumber(range[0]) + '…' + formatNumber(range[1]);
+        }
         var axisOne = rotatedView ? 'p₁' : 'u₁';
         var axisTwo = rotatedView ? 'p₂' : 'u₂';
         plotScale.textContent = (rotatedView ? 'view ' + azimuthDegrees + '°/' + elevationDegrees + '° · ' : '')
             + (warped ? 'asinh-compressed view · ' : '')
-            + axisOne + ' ' + formatNumber(xLabelRange[0]) + '…' + formatNumber(xLabelRange[1])
-            + ' · ' + axisTwo + ' ' + formatNumber(yLabelRange[0]) + '…' + formatNumber(yLabelRange[1])
+            + rangeLabel(xs, axisOne) + ' · ' + rangeLabel(ys, axisTwo)
             + (beyondView ? ' · ' + beyondView + ' of ' + allPoints.length + ' beyond view' : '');
         canvas.setAttribute('aria-label', 'Deformed coordinate grid at z equals ' + z.toFixed(2)
             + (rotatedView ? ', viewed from azimuth ' + azimuthDegrees + ' degrees and elevation ' + elevationDegrees + ' degrees' : '')
