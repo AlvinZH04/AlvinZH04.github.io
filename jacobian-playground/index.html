@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacobian Counterexample Playground — Alvin Zhang</title>
+    <meta name="description" content="An interactive exhibit of Alpöge's July 2026 counterexample to the Jacobian conjecture: compose it with shears and rescalings, keep an exact determinant ledger, and watch three points no composition can separate.">
+    <meta name="author" content="Alvin (Bowei) Zhang">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Jacobian Counterexample Playground">
+    <meta property="og:description" content="The Jacobian conjecture fell in July 2026. Compose the counterexample live: constant determinant, no inverse.">
+    <meta property="og:url" content="https://alvinzh04.github.io/jacobian-playground/">
+    <link rel="canonical" href="https://alvinzh04.github.io/jacobian-playground/">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23ff2b2b'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif' font-weight='700' font-size='28' fill='%23ffffff'%3EJ%3C/text%3E%3C/svg%3E">
+
+    <script>
+        (function () {
+            try {
+                var stored = localStorage.getItem('theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', stored || (prefersDark ? 'dark' : 'light'));
+            } catch (e) {}
+        })();
+    </script>
+
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="playground.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-1" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-2" aria-hidden="true"></div>
+
+    <header class="lab-nav">
+        <a class="lab-back" href="../">← Alvin Zhang</a>
+        <button class="theme-toggle" type="button" id="themeToggle" aria-label="Toggle dark mode">
+            <span class="theme-icon" aria-hidden="true">◐</span>
+            <span id="themeLabel">Theme</span>
+        </button>
+    </header>
+
+    <main class="lab-shell">
+        <section class="lab-hero">
+            <p class="lab-kicker">Interactive note / 01</p>
+            <h1>Compose the counterexample.<br><span>Keep the determinant exact.</span></h1>
+            <p class="lab-intro">
+                The base map <strong>G</strong> below is Alpöge&rsquo;s counterexample to the
+                <a href="https://en.wikipedia.org/wiki/Jacobian_conjecture" target="_blank" rel="noopener">Jacobian conjecture</a>,
+                announced in July 2026 and rescaled here so that <strong>det&nbsp;J<sub>G</sub>&nbsp;=&nbsp;1</strong>
+                exactly, at every point of ℂ³ — even though G is not injective. Add polynomial shears, compose
+                another copy of G, or rescale one output. The chain rule keeps an exact determinant ledger, the
+                plot shows a live two-dimensional slice, and the three-point collision below survives anything
+                you build.
+            </p>
+        </section>
+
+        <section class="lab-stats" aria-label="Current map summary">
+            <div class="lab-stat">
+                <span class="lab-stat-label">Jacobian determinant</span>
+                <strong id="determinantValue">1</strong>
+                <span id="orientationValue">volume preserving</span>
+            </div>
+            <div class="lab-stat">
+                <span class="lab-stat-label">Composition depth</span>
+                <strong id="depthValue">1</strong>
+                <span id="stepValue">base map only</span>
+            </div>
+            <div class="lab-stat">
+                <span class="lab-stat-label">Degree bound</span>
+                <strong id="degreeValue">7</strong>
+                <span>bound on total degree</span>
+            </div>
+        </section>
+
+        <section class="lab-workspace" aria-label="Polynomial map controls and visualization">
+            <div class="lab-controls">
+                <div class="lab-section-heading">
+                    <span>01 /</span>
+                    <h2>Build a composition</h2>
+                </div>
+
+                <div class="control-pair">
+                    <label for="shearAmount">Shear amount <code>t</code>
+                        <input id="shearAmount" type="text" inputmode="decimal" value="1/2" autocomplete="off">
+                    </label>
+                    <label for="shearPower">Power <code>m</code>
+                        <select id="shearPower">
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="control-actions">
+                    <button type="button" data-action="shear12">
+                        <span>Add output shear</span>
+                        <code>u₁ ← u₁ + t·u₂ᵐ</code>
+                    </button>
+                    <button type="button" data-action="shear23">
+                        <span>Add output shear</span>
+                        <code>u₂ ← u₂ + t·u₃ᵐ</code>
+                    </button>
+                    <button type="button" data-action="compose">
+                        <span>Compose another G</span>
+                        <code>F ← G ∘ F</code>
+                    </button>
+                </div>
+
+                <div class="rescale-control">
+                    <label for="targetDeterminant">Desired determinant <code>k</code>
+                        <input id="targetDeterminant" type="text" inputmode="decimal" value="6" autocomplete="off">
+                    </label>
+                    <button type="button" class="primary-action" data-action="rescale">Rescale output 1</button>
+                </div>
+
+                <div class="utility-actions">
+                    <button type="button" data-action="demo">Load a worked example</button>
+                    <button type="button" data-action="undo">Undo last step</button>
+                    <button type="button" data-action="reset">Reset</button>
+                </div>
+
+                <p class="control-message" id="controlMessage" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="lab-plot-panel">
+                <div class="plot-header">
+                    <div>
+                        <span class="plot-eyebrow">Live slice</span>
+                        <h2><code>(x, y)</code> grid at fixed <code>z</code></h2>
+                    </div>
+                    <div class="plot-sliders">
+                        <label for="zSlice">z = <output id="zValue">0.00</output>
+                            <input id="zSlice" type="range" min="-0.5" max="0.5" value="0" step="0.05">
+                        </label>
+                        <label for="viewAzimuth">view α = <output id="azimuthValue">0°</output>
+                            <input id="viewAzimuth" type="range" min="-180" max="180" value="0" step="1">
+                        </label>
+                        <label for="viewElevation">view β = <output id="elevationValue">0°</output>
+                            <input id="viewElevation" type="range" min="-90" max="90" value="0" step="1">
+                        </label>
+                    </div>
+                </div>
+                <canvas id="mapCanvas" width="900" height="620" role="img" aria-label="Deformed coordinate grid under the current polynomial map"></canvas>
+                <div class="plot-legend">
+                    <span><i class="horizontal-swatch" aria-hidden="true"></i> horizontal lines</span>
+                    <span><i class="vertical-swatch" aria-hidden="true"></i> vertical lines</span>
+                    <span id="plotScale">view auto-fitted</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="lab-howto">
+            <div class="lab-section-heading">
+                <span>02 /</span>
+                <h2>How to use this playground</h2>
+            </div>
+            <ol class="howto-list">
+                <li>
+                    <strong>Add a polynomial shear.</strong>
+                    Enter a rational amount <code>t</code> (e.g. <code>1/2</code>), pick a power <code>m</code>, and
+                    press either shear button — <code>u₁ ← u₁ + t·u₂ᵐ</code> or <code>u₂ ← u₂ + t·u₃ᵐ</code>.
+                    Shears are triangular, so their ledger factor is exactly 1. Pressing Enter in the
+                    <code>t</code> field applies the first shear.
+                </li>
+                <li>
+                    <strong>Rescale to a chosen determinant.</strong>
+                    Type a target <code>k</code> and press <em>Rescale output 1</em> (or Enter): the first output is
+                    multiplied by <code>k / det J_F</code>, so the ledger lands on exactly <code>k</code>.
+                    <code>k = 0</code> is allowed as a deliberately singular contrast.
+                </li>
+                <li>
+                    <strong>Compose another copy of G.</strong>
+                    <em>Compose another G</em> applies <code>F ← G ∘ F</code>. The determinant is unchanged — and the
+                    collision can only deepen. Three extra copies are the cap that keeps the live plot responsive.
+                </li>
+                <li>
+                    <strong>Read the results.</strong>
+                    The <em>ledger</em> multiplies the stage factors into <code>det J_F</code> in exact rational
+                    arithmetic; the <em>degree</em> stat is an upper bound on total degree; the <em>plot</em> shows the
+                    image of an (x, y) grid at the slider&rsquo;s z, switching to an asinh-compressed view when values
+                    spread over many orders of magnitude — drag the plot with the mouse, or use the
+                    <em>view α/β</em> sliders, to orbit the image in output space (display only; rotation never
+                    enters the pipeline or the ledger); and the <em>collision panel</em> re-evaluates the three
+                    witness points exactly — their images stay identical no matter what you build.
+                </li>
+            </ol>
+        </section>
+
+        <section class="lab-collision">
+            <div class="lab-section-heading">
+                <span>03 /</span>
+                <h2>The collision</h2>
+            </div>
+            <p class="collision-lede">
+                These three points share one image under G. Every operation above is applied <em>after</em> G,
+                so no composition you build here can pull them apart — and for every nonzero rescale target,
+                the ledger keeps the determinant a nonzero constant. A Keller map that merges points is exactly
+                what the Jacobian conjecture said could not exist. The images update live, in exact arithmetic,
+                as you edit the pipeline.
+            </p>
+            <div class="collision-grid">
+                <div class="collision-card">
+                    <span class="collision-input">F(0, 0, −1/16)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+                <div class="collision-card">
+                    <span class="collision-input">F(1, −3/4, 13/8)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+                <div class="collision-card">
+                    <span class="collision-input">F(−1, 3/4, 13/8)</span>
+                    <code class="collision-image">(-1/16, 0, 0)</code>
+                </div>
+            </div>
+            <p class="collision-note" id="collisionNote">All three images agree while det J_F = 1 everywhere: a nonzero constant determinant without injectivity.</p>
+        </section>
+
+        <section class="lab-examples">
+            <div class="lab-section-heading">
+                <span>04 /</span>
+                <h2>Worked examples</h2>
+            </div>
+            <p class="examples-lede">
+                Three states rendered by this page&rsquo;s own code, so you know what to expect before touching
+                anything. Reproduce them with <em>Reset</em>, <em>Load a worked example</em>, and
+                <em>Rescale output&nbsp;1</em> with k&nbsp;=&nbsp;0.
+            </p>
+            <div class="example-stack">
+                <article class="example-card">
+                    <div class="example-head">
+                        <h3>The base map G</h3>
+                        <span class="example-kicker">reset state</span>
+                    </div>
+                    <code class="example-pipeline">F = G</code>
+                    <dl class="example-meta">
+                        <div><dt>det J_F</dt><dd>1</dd></div>
+                        <div><dt>character</dt><dd>volume preserving</dd></div>
+                        <div><dt>degree bound</dt><dd>7</dd></div>
+                        <div><dt>all three witnesses ↦</dt><dd>(-1/16, 0, 0)</dd></div>
+                    </dl>
+                    <p class="example-prose">The counterexample itself, untouched: determinant exactly 1 at every point, yet the three witness points already share one image.</p>
+                    <svg class="example-plot" viewBox="0 0 900 620" role="img" aria-label="Slice of the base counterexample map G at z equals 0" preserveAspectRatio="xMidYMid meet">
+<rect width="900" height="620" fill="var(--bg-soft)"/>
+<polyline points="560.9,750.0 557.6,734.4 554.4,718.9 551.1,703.7 548.0,688.6 544.8,673.8 541.7,659.1 538.6,644.6 535.5,630.3 532.4,616.2 529.4,602.3 526.4,588.5 523.4,575.0 520.5,561.7 517.5,548.5 514.6,535.5 511.8,522.8 508.9,510.2 506.1,497.8 503.3,485.6 500.6,473.6 497.8,461.8 495.1,450.2 492.4,438.7 489.8,427.5 487.2,416.4 484.6,405.6 482.0,394.9 479.4,384.4 476.9,374.1 474.4,364.0 472.0,354.1 469.5,344.4 467.1,334.9 464.7,325.6 462.4,316.4 460.0,307.5 457.7,298.7 455.4,290.1 453.2,281.8 451.0,273.6 448.8,265.6 446.6,257.8 444.4,250.2 442.3,242.7 440.2,235.5 438.2,228.5 436.1,221.6 434.1,215.0 432.1,208.5 430.2,202.2 428.2,196.1 426.3,190.2 424.5,184.5 422.6,179.0 420.8,173.7 419.0,168.6 417.2,163.6" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="461.0,559.6 459.7,551.5 458.4,543.6 457.1,535.7 455.9,527.9 454.6,520.2 453.3,512.5 452.1,505.0 450.9,497.5 449.6,490.1 448.4,482.8 447.2,475.5 446.0,468.4 444.8,461.3 443.6,454.3 442.4,447.4 441.2,440.6 440.1,433.8 438.9,427.1 437.8,420.6 436.6,414.0 435.5,407.6 434.4,401.3 433.3,395.0 432.2,388.8 431.1,382.7 430.0,376.7 428.9,370.7 427.8,364.8 426.7,359.1 425.7,353.4 424.6,347.7 423.6,342.2 422.6,336.7 421.6,331.3 420.5,326.0 419.5,320.8 418.5,315.7 417.6,310.6 416.6,305.6 415.6,300.7 414.6,295.9 413.7,291.2 412.8,286.5 411.8,281.9 410.9,277.4 410.0,273.0 409.1,268.7 408.2,264.4 407.3,260.2 406.4,256.2 405.5,252.1 404.6,248.2 403.8,244.4 402.9,240.6 402.1,236.9 401.2,233.3 400.4,229.7" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="400.6,427.6 400.2,424.4 399.9,421.2 399.5,418.0 399.1,414.8 398.8,411.7 398.4,408.5 398.1,405.4 397.7,402.4 397.4,399.3 397.0,396.3 396.7,393.3 396.3,390.3 396.0,387.4 395.7,384.4 395.3,381.5 395.0,378.6 394.7,375.8 394.3,372.9 394.0,370.1 393.7,367.4 393.3,364.6 393.0,361.8 392.7,359.1 392.4,356.4 392.0,353.8 391.7,351.1 391.4,348.5 391.1,345.9 390.8,343.3 390.5,340.8 390.1,338.3 389.8,335.8 389.5,333.3 389.2,330.8 388.9,328.4 388.6,326.0 388.3,323.6 388.0,321.3 387.7,318.9 387.4,316.6 387.1,314.3 386.8,312.1 386.5,309.8 386.2,307.6 386.0,305.4 385.7,303.3 385.4,301.1 385.1,299.0 384.8,296.9 384.5,294.9 384.3,292.8 384.0,290.8 383.7,288.8 383.4,286.8 383.2,284.9 382.9,282.9 382.6,281.0" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="370.3,346.9 370.2,346.1 370.2,345.4 370.1,344.7 370.1,344.0 370.1,343.2 370.0,342.5 370.0,341.8 369.9,341.1 369.9,340.4 369.9,339.7 369.8,339.0 369.8,338.3 369.7,337.6 369.7,337.0 369.6,336.3 369.6,335.6 369.6,334.9 369.5,334.2 369.5,333.6 369.4,332.9 369.4,332.2 369.4,331.6 369.3,330.9 369.3,330.2 369.2,329.6 369.2,328.9 369.2,328.3 369.1,327.6 369.1,327.0 369.0,326.4 369.0,325.7 369.0,325.1 368.9,324.5 368.9,323.8 368.9,323.2 368.8,322.6 368.8,322.0 368.7,321.3 368.7,320.7 368.7,320.1 368.6,319.5 368.6,318.9 368.5,318.3 368.5,317.7 368.5,317.1 368.4,316.5 368.4,315.9 368.4,315.3 368.3,314.8 368.3,314.2 368.2,313.6 368.2,313.0 368.2,312.5 368.1,311.9 368.1,311.3 368.1,310.8 368.0,310.2" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0 361.8,310.0" fill="none" stroke="var(--accent)" stroke-opacity="0.95" stroke-width="1.80" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="368.0,309.8 368.1,309.2 368.1,308.7 368.1,308.1 368.2,307.5 368.2,307.0 368.2,306.4 368.3,305.8 368.3,305.2 368.4,304.7 368.4,304.1 368.4,303.5 368.5,302.9 368.5,302.3 368.5,301.7 368.6,301.1 368.6,300.5 368.7,299.9 368.7,299.3 368.7,298.7 368.8,298.0 368.8,297.4 368.9,296.8 368.9,296.2 368.9,295.5 369.0,294.9 369.0,294.3 369.0,293.6 369.1,293.0 369.1,292.4 369.2,291.7 369.2,291.1 369.2,290.4 369.3,289.8 369.3,289.1 369.4,288.4 369.4,287.8 369.4,287.1 369.5,286.4 369.5,285.8 369.6,285.1 369.6,284.4 369.6,283.7 369.7,283.0 369.7,282.4 369.8,281.7 369.8,281.0 369.9,280.3 369.9,279.6 369.9,278.9 370.0,278.2 370.0,277.5 370.1,276.8 370.1,276.0 370.1,275.3 370.2,274.6 370.2,273.9 370.3,273.1" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="382.6,339.0 382.9,337.1 383.2,335.1 383.4,333.2 383.7,331.2 384.0,329.2 384.3,327.2 384.5,325.1 384.8,323.1 385.1,321.0 385.4,318.9 385.7,316.7 386.0,314.6 386.2,312.4 386.5,310.2 386.8,307.9 387.1,305.7 387.4,303.4 387.7,301.1 388.0,298.7 388.3,296.4 388.6,294.0 388.9,291.6 389.2,289.2 389.5,286.7 389.8,284.2 390.1,281.7 390.5,279.2 390.8,276.7 391.1,274.1 391.4,271.5 391.7,268.9 392.0,266.2 392.4,263.6 392.7,260.9 393.0,258.2 393.3,255.4 393.7,252.6 394.0,249.9 394.3,247.1 394.7,244.2 395.0,241.4 395.3,238.5 395.7,235.6 396.0,232.6 396.3,229.7 396.7,226.7 397.0,223.7 397.4,220.7 397.7,217.6 398.1,214.6 398.4,211.5 398.8,208.3 399.1,205.2 399.5,202.0 399.9,198.8 400.2,195.6 400.6,192.4" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="400.4,390.3 401.2,386.7 402.1,383.1 402.9,379.4 403.8,375.6 404.6,371.8 405.5,367.9 406.4,363.8 407.3,359.8 408.2,355.6 409.1,351.3 410.0,347.0 410.9,342.6 411.8,338.1 412.8,333.5 413.7,328.8 414.6,324.1 415.6,319.3 416.6,314.4 417.6,309.4 418.5,304.3 419.5,299.2 420.5,294.0 421.6,288.7 422.6,283.3 423.6,277.8 424.6,272.3 425.7,266.6 426.7,260.9 427.8,255.2 428.9,249.3 430.0,243.3 431.1,237.3 432.2,231.2 433.3,225.0 434.4,218.7 435.5,212.4 436.6,206.0 437.8,199.4 438.9,192.9 440.1,186.2 441.2,179.4 442.4,172.6 443.6,165.7 444.8,158.7 446.0,151.6 447.2,144.5 448.4,137.2 449.6,129.9 450.9,122.5 452.1,115.0 453.3,107.5 454.6,99.8 455.9,92.1 457.1,84.3 458.4,76.4 459.7,68.5 461.0,60.4" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="417.2,456.4 419.0,451.4 420.8,446.3 422.6,441.0 424.5,435.5 426.3,429.8 428.2,423.9 430.2,417.8 432.1,411.5 434.1,405.0 436.1,398.4 438.2,391.5 440.2,384.5 442.3,377.3 444.4,369.8 446.6,362.2 448.8,354.4 451.0,346.4 453.2,338.2 455.4,329.9 457.7,321.3 460.0,312.5 462.4,303.6 464.7,294.4 467.1,285.1 469.5,275.6 472.0,265.9 474.4,256.0 476.9,245.9 479.4,235.6 482.0,225.1 484.6,214.4 487.2,203.6 489.8,192.5 492.4,181.3 495.1,169.8 497.8,158.2 500.6,146.4 503.3,134.4 506.1,122.2 508.9,109.8 511.8,97.2 514.6,84.5 517.5,71.5 520.5,58.3 523.4,45.0 526.4,31.5 529.4,17.7 532.4,3.8 535.5,-10.3 538.6,-24.6 541.7,-39.1 544.8,-53.8 548.0,-68.6 551.1,-83.7 554.4,-98.9 557.6,-114.4 560.9,-130.0" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="560.9,750.0 544.1,719.5 528.3,690.2 513.4,662.3 499.4,635.5 486.2,609.9 473.9,585.6 462.4,562.4 451.7,540.4 441.7,519.5 432.4,499.7 423.9,481.0 416.0,463.4 408.8,446.9 402.1,431.3 396.1,416.8 390.7,403.3 385.8,390.8 381.4,379.2 377.6,368.5 374.2,358.8 371.3,349.9 368.8,342.0 366.7,334.8 365.0,328.5 363.7,323.1 362.8,318.4 362.2,314.5 361.9,311.3 361.9,308.9 362.1,307.2 362.7,306.1 363.5,305.8 364.5,306.1 365.7,307.0 367.1,308.5 368.6,310.7 370.4,313.4 372.2,316.6 374.2,320.4 376.3,324.7 378.6,329.5 380.9,334.7 383.2,340.4 385.6,346.6 388.1,353.1 390.6,360.1 393.1,367.4 395.7,375.0 398.2,383.0 400.7,391.3 403.2,399.9 405.7,408.7 408.1,417.9 410.5,427.2 412.8,436.7 415.0,446.5 417.2,456.4" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="538.2,642.8 523.9,620.8 510.3,599.6 497.5,579.3 485.4,559.8 474.0,541.1 463.2,523.2 453.2,506.1 443.7,489.8 434.9,474.3 426.7,459.5 419.0,445.5 412.0,432.3 405.4,419.7 399.5,407.9 394.0,396.8 389.0,386.4 384.5,376.6 380.4,367.5 376.8,359.1 373.7,351.4 370.9,344.2 368.5,337.8 366.6,331.9 365.0,326.6 363.7,321.9 362.8,317.8 362.2,314.3 361.9,311.3 361.9,308.9 362.1,307.0 362.7,305.6 363.5,304.7 364.5,304.4 365.8,304.5 367.3,305.1 368.9,306.2 370.8,307.7 372.8,309.7 375.0,312.2 377.4,315.0 379.9,318.2 382.5,321.9 385.3,325.9 388.1,330.4 391.1,335.1 394.1,340.3 397.2,345.8 400.4,351.6 403.6,357.7 406.9,364.2 410.2,370.9 413.6,377.9 416.9,385.2 420.3,392.8 423.7,400.6 427.1,408.7 430.4,417.0" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="516.8,545.2 504.8,530.7 493.3,516.7 482.4,503.2 472.1,490.2 462.3,477.6 453.1,465.6 444.3,454.0 436.1,442.9 428.4,432.2 421.2,422.0 414.4,412.3 408.1,403.0 402.3,394.1 396.9,385.7 391.9,377.8 387.3,370.2 383.2,363.1 379.5,356.4 376.1,350.1 373.2,344.2 370.6,338.7 368.3,333.7 366.4,329.0 364.9,324.7 363.7,320.8 362.8,317.2 362.2,314.1 361.9,311.3 361.9,308.8 362.2,306.8 362.7,305.0 363.5,303.7 364.6,302.6 365.9,302.0 367.5,301.6 369.3,301.6 371.3,301.9 373.5,302.5 375.9,303.4 378.5,304.6 381.3,306.2 384.3,308.0 387.4,310.2 390.7,312.6 394.2,315.3 397.8,318.3 401.5,321.5 405.4,325.0 409.4,328.8 413.5,332.9 417.7,337.2 422.1,341.7 426.5,346.5 431.0,351.5 435.6,356.8 440.2,362.2 445.0,367.9" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="496.8,457.4 486.9,449.4 477.4,441.7 468.3,434.1 459.6,426.8 451.3,419.7 443.5,412.7 436.0,406.0 428.9,399.5 422.2,393.3 415.9,387.2 410.0,381.3 404.4,375.6 399.2,370.1 394.4,364.8 389.9,359.8 385.8,354.9 382.0,350.2 378.5,345.7 375.4,341.4 372.7,337.3 370.2,333.4 368.1,329.7 366.3,326.1 364.8,322.8 363.6,319.6 362.7,316.6 362.2,313.8 361.9,311.2 361.9,308.8 362.2,306.6 362.7,304.5 363.6,302.6 364.7,300.9 366.0,299.3 367.7,298.0 369.6,296.8 371.7,295.7 374.1,294.9 376.7,294.2 379.6,293.7 382.7,293.3 386.1,293.1 389.6,293.1 393.4,293.2 397.4,293.5 401.6,294.0 406.1,294.6 410.7,295.4 415.5,296.3 420.6,297.4 425.8,298.6 431.2,300.0 436.8,301.6 442.5,303.2 448.5,305.1 454.6,307.1 460.9,309.2" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="478.2,379.3 470.2,376.8 462.4,374.4 455.0,372.0 447.8,369.5 440.9,367.1 434.3,364.7 428.0,362.2 422.0,359.8 416.3,357.4 410.9,355.0 405.7,352.5 400.8,350.1 396.2,347.7 392.0,345.2 387.9,342.8 384.2,340.4 380.8,337.9 377.6,335.5 374.8,333.1 372.2,330.7 369.9,328.2 367.9,325.8 366.2,323.4 364.7,320.9 363.6,318.5 362.7,316.1 362.2,313.6 361.9,311.2 361.9,308.8 362.2,306.4 362.7,303.9 363.6,301.5 364.7,299.1 366.2,296.6 367.9,294.2 369.9,291.8 372.2,289.3 374.8,286.9 377.6,284.5 380.8,282.1 384.2,279.6 387.9,277.2 392.0,274.8 396.2,272.3 400.8,269.9 405.7,267.5 410.9,265.0 416.3,262.6 422.0,260.2 428.0,257.8 434.3,255.3 440.9,252.9 447.8,250.5 455.0,248.0 462.4,245.6 470.2,243.2 478.2,240.7" fill="none" stroke="var(--cyan)" stroke-opacity="0.95" stroke-width="1.80" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="460.9,310.8 454.6,312.9 448.5,314.9 442.5,316.8 436.8,318.4 431.2,320.0 425.8,321.4 420.6,322.6 415.5,323.7 410.7,324.6 406.1,325.4 401.6,326.0 397.4,326.5 393.4,326.8 389.6,326.9 386.1,326.9 382.7,326.7 379.6,326.3 376.7,325.8 374.1,325.1 371.7,324.3 369.6,323.2 367.7,322.0 366.0,320.7 364.7,319.1 363.6,317.4 362.7,315.5 362.2,313.4 361.9,311.2 361.9,308.8 362.2,306.2 362.7,303.4 363.6,300.4 364.8,297.2 366.3,293.9 368.1,290.3 370.2,286.6 372.7,282.7 375.4,278.6 378.5,274.3 382.0,269.8 385.8,265.1 389.9,260.2 394.4,255.2 399.2,249.9 404.4,244.4 410.0,238.7 415.9,232.8 422.2,226.7 428.9,220.5 436.0,214.0 443.5,207.3 451.3,200.3 459.6,193.2 468.3,185.9 477.4,178.3 486.9,170.6 496.8,162.6" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="445.0,252.1 440.2,257.8 435.6,263.2 431.0,268.5 426.5,273.5 422.1,278.3 417.7,282.8 413.5,287.1 409.4,291.2 405.4,295.0 401.5,298.5 397.8,301.7 394.2,304.7 390.7,307.4 387.4,309.8 384.3,312.0 381.3,313.8 378.5,315.4 375.9,316.6 373.5,317.5 371.3,318.1 369.3,318.4 367.5,318.4 365.9,318.0 364.6,317.4 363.5,316.3 362.7,315.0 362.2,313.2 361.9,311.2 361.9,308.7 362.2,305.9 362.8,302.8 363.7,299.2 364.9,295.3 366.4,291.0 368.3,286.3 370.6,281.3 373.2,275.8 376.1,269.9 379.5,263.6 383.2,256.9 387.3,249.8 391.9,242.2 396.9,234.3 402.3,225.9 408.1,217.0 414.4,207.7 421.2,198.0 428.4,187.8 436.1,177.1 444.3,166.0 453.1,154.4 462.3,142.4 472.1,129.8 482.4,116.8 493.3,103.3 504.8,89.3 516.8,74.8" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="430.4,203.0 427.1,211.3 423.7,219.4 420.3,227.2 416.9,234.8 413.6,242.1 410.2,249.1 406.9,255.8 403.6,262.3 400.4,268.4 397.2,274.2 394.1,279.7 391.1,284.9 388.1,289.6 385.3,294.1 382.5,298.1 379.9,301.8 377.4,305.0 375.0,307.8 372.8,310.3 370.8,312.3 368.9,313.8 367.3,314.9 365.8,315.5 364.5,315.6 363.5,315.3 362.7,314.4 362.1,313.0 361.9,311.1 361.9,308.7 362.2,305.7 362.8,302.2 363.7,298.1 365.0,293.4 366.6,288.1 368.5,282.2 370.9,275.8 373.7,268.6 376.8,260.9 380.4,252.5 384.5,243.4 389.0,233.6 394.0,223.2 399.5,212.1 405.4,200.3 412.0,187.7 419.0,174.5 426.7,160.5 434.9,145.7 443.7,130.2 453.2,113.9 463.2,96.8 474.0,78.9 485.4,60.2 497.5,40.7 510.3,20.4 523.9,-0.8 538.2,-22.8" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="417.2,163.6 415.0,173.5 412.8,183.3 410.5,192.8 408.1,202.1 405.7,211.3 403.2,220.1 400.7,228.7 398.2,237.0 395.7,245.0 393.1,252.6 390.6,259.9 388.1,266.9 385.6,273.4 383.2,279.6 380.9,285.3 378.6,290.5 376.3,295.3 374.2,299.6 372.2,303.4 370.4,306.6 368.6,309.3 367.1,311.5 365.7,313.0 364.5,313.9 363.5,314.2 362.7,313.9 362.1,312.8 361.9,311.1 361.9,308.7 362.2,305.5 362.8,301.6 363.7,296.9 365.0,291.5 366.7,285.2 368.8,278.0 371.3,270.1 374.2,261.2 377.6,251.5 381.4,240.8 385.8,229.2 390.7,216.7 396.1,203.2 402.1,188.7 408.8,173.1 416.0,156.6 423.9,139.0 432.4,120.3 441.7,100.5 451.7,79.6 462.4,57.6 473.9,34.4 486.2,10.1 499.4,-15.5 513.4,-42.3 528.3,-70.2 544.1,-99.5 560.9,-130.0" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
+                    <p class="example-caption">Exported from the live canvas · z = 0 · u₁ 0…1.069 · u₂ -1.674…1.674 · 32 of 1044 beyond view</p>
+                </article>
+                <article class="example-card">
+                    <div class="example-head">
+                        <h3>A determinant-6 composition</h3>
+                        <span class="example-kicker">load a worked example</span>
+                    </div>
+                    <code class="example-pipeline">F = D₁[6] ∘ S₂₃[-1,3] ∘ G ∘ S₁₂[1/2,2] ∘ G</code>
+                    <dl class="example-meta">
+                        <div><dt>det J_F</dt><dd>6</dd></div>
+                        <div><dt>character</dt><dd>orientation preserved · scale 6</dd></div>
+                        <div><dt>degree bound</dt><dd>120</dd></div>
+                        <div><dt>all three witnesses ↦</dt><dd>(0, -1/4096, 1/16)</dd></div>
+                    </dl>
+                    <p class="example-prose">The built-in four-stage pipeline: shear, compose another G, shear, rescale. The ledger telescopes to exactly 6, the collision survives every stage, and the slice needs asinh compression because the composed degrees reach the bound.</p>
+                    <svg class="example-plot" viewBox="0 0 900 620" role="img" aria-label="Slice of the determinant-6 worked composition at z equals 0" preserveAspectRatio="xMidYMid meet">
+<rect width="900" height="620" fill="var(--bg-soft)"/>
+<polyline points="644.5,-131.7 636.5,-118.6 628.3,-105.4 619.9,-92.0 611.3,-78.5 602.5,-64.8 593.5,-50.9 584.2,-36.9 574.7,-22.7 564.8,-8.2 554.6,6.3 544.1,21.1 533.1,36.1 521.6,51.2 509.6,66.6 497.0,82.1 483.7,97.7 469.5,113.4 454.3,129.2 437.7,144.9 419.3,160.5 398.7,175.8 375.0,190.6 349.9,204.9 332.0,218.4 325.9,231.1 326.4,243.0 329.4,254.2 332.4,264.9 334.2,275.2 334.6,285.3 333.5,295.0 331.4,303.8 328.6,311.4 325.6,317.3 322.7,321.4 320.4,323.9 318.9,324.9 318.4,324.8 319.2,323.4 321.4,321.0 325.3,317.6 330.9,313.2 338.2,308.0 346.6,302.3 355.3,296.3 363.8,290.3 371.7,284.4 379.0,278.9 385.6,273.6 391.7,268.7 397.2,264.2 402.3,259.9 407.0,255.9 411.3,252.3 415.2,248.9 418.9,245.7 422.2,242.9" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="504.3,91.8 496.2,102.4 487.8,113.0 479.1,123.8 470.0,134.6 460.4,145.5 450.3,156.4 439.7,167.3 428.3,178.2 415.9,189.0 402.5,199.5 387.7,209.7 371.4,219.4 354.2,228.6 339.0,237.1 329.4,244.9 325.2,252.0 324.9,258.4 326.7,264.2 329.7,269.5 333.0,274.5 336.0,279.2 338.5,283.7 340.3,288.2 341.4,292.4 341.9,296.6 341.7,300.6 340.9,304.4 339.7,308.0 338.0,311.2 336.1,314.1 333.9,316.6 331.6,318.7 329.2,320.5 326.9,322.0 324.6,323.1 322.5,324.0 320.7,324.7 319.1,325.1 317.7,325.3 316.6,325.4 315.8,325.3 315.3,325.1 315.0,324.7 315.0,324.2 315.2,323.6 315.7,322.9 316.5,322.1 317.5,321.1 318.8,320.1 320.3,319.1 322.1,317.9 324.1,316.6 326.3,315.3 328.7,314.0 331.2,312.6 333.9,311.1 336.6,309.7" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="342.6,285.1 344.7,286.5 346.6,287.9 348.2,289.4 349.7,291.0 350.8,292.5 351.8,294.1 352.5,295.7 353.0,297.3 353.4,298.9 353.5,300.6 353.5,302.1 353.4,303.7 353.1,305.3 352.6,306.8 352.1,308.2 351.4,309.6 350.5,310.9 349.6,312.2 348.6,313.3 347.5,314.5 346.3,315.5 345.0,316.4 343.6,317.3 342.2,318.1 340.7,318.9 339.2,319.6 337.6,320.2 336.0,320.7 334.4,321.2 332.8,321.7 331.2,322.1 329.6,322.4 328.0,322.7 326.5,323.0 325.0,323.2 323.5,323.4 322.1,323.6 320.8,323.7 319.5,323.8 318.2,323.9 317.0,324.0 315.9,324.1 314.8,324.1 313.8,324.2 312.8,324.2 311.9,324.2 311.0,324.2 310.2,324.2 309.4,324.2 308.6,324.2 307.9,324.2 307.2,324.1 306.6,324.1 305.9,324.1 305.3,324.1 304.8,324.1 304.2,324.1" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="351.8,320.6 351.2,320.8 350.6,320.9 350.0,321.0 349.3,321.0 348.6,321.1 348.0,321.2 347.3,321.3 346.6,321.4 345.8,321.5 345.1,321.5 344.4,321.6 343.6,321.7 342.9,321.7 342.1,321.8 341.3,321.8 340.5,321.9 339.7,321.9 338.8,322.0 338.0,322.0 337.2,322.1 336.3,322.1 335.4,322.1 334.5,322.2 333.7,322.2 332.8,322.2 331.9,322.3 331.0,322.3 330.0,322.3 329.1,322.3 328.2,322.4 327.3,322.4 326.3,322.4 325.4,322.4 324.5,322.4 323.5,322.4 322.6,322.5 321.7,322.5 320.7,322.5 319.8,322.5 318.9,322.5 318.0,322.5 317.1,322.5 316.2,322.5 315.3,322.5 314.4,322.5 313.5,322.5 312.6,322.5 311.8,322.5 310.9,322.5 310.0,322.5 309.2,322.6 308.4,322.6 307.6,322.6 306.7,322.6 305.9,322.6 305.2,322.6 304.4,322.6" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="347.9,321.0 347.3,321.0 346.6,321.0 346.0,321.0 345.3,321.0 344.6,321.0 344.0,321.0 343.3,321.0 342.6,321.0 341.9,321.0 341.2,321.0 340.5,321.0 339.8,321.0 339.1,321.0 338.3,321.0 337.6,321.0 336.9,321.0 336.1,321.0 335.4,321.0 334.6,321.0 333.9,321.0 333.1,321.0 332.3,321.0 331.6,321.0 330.8,321.0 330.0,321.0 329.2,321.0 328.5,321.0 327.7,321.0 326.9,321.0 326.1,321.0 325.3,321.0 324.6,321.0 323.8,321.0 323.0,321.0 322.2,321.0 321.5,321.0 320.7,321.0 320.0,321.0 319.2,321.0 318.5,321.0 317.7,321.0 317.0,321.0 316.2,321.0 315.5,321.0 314.8,321.0 314.1,321.0 313.4,321.0 312.7,321.0 312.0,321.0 311.3,321.0 310.6,321.0 309.9,321.0 309.3,321.0 308.6,321.0 308.0,321.0 307.3,321.0 306.7,321.0" fill="none" stroke="var(--accent)" stroke-opacity="0.95" stroke-width="1.80" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="350.2,319.4 349.5,319.4 348.7,319.4 348.0,319.4 347.2,319.4 346.5,319.4 345.7,319.4 345.0,319.3 344.2,319.3 343.4,319.3 342.7,319.3 341.9,319.3 341.2,319.3 340.4,319.3 339.7,319.3 339.0,319.3 338.2,319.3 337.5,319.3 336.8,319.3 336.1,319.3 335.3,319.3 334.6,319.3 333.9,319.3 333.3,319.3 332.6,319.2 331.9,319.2 331.3,319.2 330.6,319.2 330.0,319.2 329.4,319.2 328.7,319.2 328.1,319.2 327.6,319.2 327.0,319.2 326.4,319.2 325.9,319.1 325.3,319.1 324.8,319.1 324.3,319.1 323.8,319.1 323.3,319.1 322.9,319.1 322.4,319.1 322.0,319.1 321.6,319.1 321.2,319.1 320.8,319.0 320.4,319.0 320.0,319.0 319.7,319.0 319.3,319.0 319.0,319.0 318.7,319.0 318.4,319.0 318.1,318.9 317.9,318.9 317.6,318.9 317.4,318.9" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="353.9,316.0 352.8,316.2 351.7,316.5 350.6,316.7 349.5,316.9 348.4,317.0 347.4,317.2 346.3,317.3 345.3,317.4 344.2,317.5 343.3,317.6 342.3,317.7 341.4,317.7 340.6,317.7 339.7,317.7 339.0,317.7 338.3,317.6 337.7,317.6 337.2,317.5 336.8,317.3 336.4,317.2 336.2,317.0 336.0,316.8 335.9,316.6 336.0,316.3 336.2,316.0 336.5,315.6 336.9,315.2 337.5,314.8 338.2,314.2 339.0,313.7 340.1,313.0 341.2,312.3 342.5,311.5 344.0,310.6 345.7,309.6 347.5,308.6 349.4,307.4 351.5,306.1 353.8,304.7 356.2,303.1 358.6,301.5 361.2,299.7 363.9,297.8 366.7,295.8 369.5,293.6 372.3,291.3 375.3,288.9 378.2,286.4 381.2,283.9 384.2,281.2 387.2,278.5 390.3,275.7 393.3,272.8 396.4,269.9 399.5,267.0 402.5,264.0 405.6,261.0" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="356.1,298.6 355.7,299.8 355.1,301.1 354.5,302.5 353.7,303.8 352.8,305.1 351.8,306.3 350.6,307.6 349.3,308.8 348.0,309.9 346.6,311.0 345.1,312.0 343.6,312.9 342.1,313.7 340.7,314.3 339.3,314.9 338.1,315.3 337.0,315.6 336.2,315.7 335.6,315.6 335.4,315.3 335.6,314.8 336.2,314.0 337.3,312.9 339.1,311.4 341.5,309.5 344.7,307.1 348.5,304.2 353.1,300.8 358.2,296.9 363.9,292.4 369.8,287.6 376.0,282.3 382.3,276.8 388.6,271.2 395.0,265.4 401.4,259.5 407.7,253.6 414.1,247.7 420.4,241.8 426.7,235.9 433.0,230.2 439.2,224.6 445.4,219.1 451.6,213.8 457.8,208.8 464.0,204.1 470.1,199.9 476.2,196.3 482.3,193.7 488.3,192.4 494.4,193.4 500.4,198.8 506.3,217.3 512.2,408.3 518.1,461.1 523.9,487.1 529.8,506.8" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="325.0,276.2 324.1,276.1 324.2,276.2 325.1,276.7 326.8,277.4 328.9,278.4 331.2,279.6 333.6,281.1 335.9,282.8 337.8,284.8 339.4,286.9 340.6,289.3 341.2,291.9 341.4,294.6 341.1,297.5 340.4,300.4 339.3,303.2 338.0,305.9 336.5,308.3 335.1,310.3 334.1,311.7 333.6,312.2 334.1,311.7 336.1,309.8 340.0,306.2 346.4,300.6 355.3,293.1 365.9,284.1 377.4,274.1 389.1,263.9 400.7,253.7 412.1,243.8 423.2,234.4 434.1,225.7 444.7,217.9 455.2,211.4 465.5,207.3 475.7,207.7 485.7,221.2 495.5,410.8 505.2,468.0 514.8,498.9 524.2,523.5 533.5,545.1 542.7,564.9 551.7,583.5 560.5,601.3 569.3,618.3 577.9,634.8 586.3,650.9 594.7,666.5 602.9,681.7 611.0,696.7 618.9,711.3 626.8,725.6 634.5,739.8 642.1,753.7 649.6,767.4" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="644.5,-131.7 627.5,-102.7 609.8,-72.9 591.4,-42.5 572.1,-11.3 551.9,20.6 530.4,53.5 507.3,87.5 482.1,122.6 453.7,159.0 420.2,196.0 377.1,231.2 330.9,258.4 325.9,274.0 339.2,283.1 350.7,290.8 356.7,298.5 358.7,305.7 358.4,311.6 356.9,315.8 354.8,318.6 352.6,320.2 350.7,321.1 349.2,321.5 348.2,321.6 347.7,321.6 347.5,321.5 347.5,321.3 347.7,321.1 348.1,320.9 348.4,320.6 348.8,320.4 349.2,320.2 349.5,319.9 349.8,319.7 350.1,319.5 350.3,319.3 350.6,319.0 350.9,318.7 351.3,318.4 351.8,318.0 352.5,317.4 353.2,316.7 354.1,315.7 355.0,314.5 355.9,312.8 356.8,310.7 357.3,308.1 357.5,305.1 357.1,301.7 355.8,298.1 353.5,294.4 349.7,290.7 344.3,287.4 337.3,284.4 330.0,281.7 324.7,279.2 325.0,276.2" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="583.1,-35.1 566.5,-8.7 549.1,18.4 530.8,46.2 511.3,74.6 490.4,103.9 467.5,134.0 441.8,164.8 411.5,195.8 373.5,225.4 333.6,250.3 324.5,267.6 333.1,278.7 344.0,286.8 351.4,294.1 355.0,301.0 356.1,307.2 355.5,312.2 354.0,316.0 352.0,318.5 349.8,320.1 347.9,321.1 346.2,321.6 344.9,321.7 344.0,321.7 343.4,321.6 343.1,321.5 343.0,321.3 343.1,321.1 343.3,320.9 343.6,320.6 343.9,320.4 344.1,320.2 344.4,319.9 344.6,319.7 344.8,319.5 344.9,319.3 345.0,319.0 345.1,318.8 345.2,318.6 345.4,318.3 345.6,318.0 345.9,317.7 346.3,317.2 346.8,316.6 347.4,315.8 348.1,314.8 348.8,313.5 349.5,311.9 350.1,309.9 350.5,307.4 350.5,304.5 350.0,301.3 348.8,297.7 346.7,293.8 343.5,289.8 339.1,285.7 333.9,281.3" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="506.6,70.4 489.6,93.7 471.4,117.5 451.5,141.7 429.2,166.3 403.3,190.9 372.1,214.8 339.1,236.6 325.0,254.9 327.1,268.8 335.0,279.0 342.7,287.1 348.1,294.0 351.2,300.3 352.4,305.9 352.3,310.6 351.3,314.3 349.7,317.1 347.8,319.1 345.9,320.4 344.1,321.2 342.4,321.7 341.1,321.9 340.0,321.9 339.2,321.8 338.6,321.7 338.3,321.5 338.1,321.3 338.1,321.1 338.2,320.9 338.4,320.6 338.6,320.4 338.8,320.2 339.0,319.9 339.2,319.7 339.4,319.5 339.6,319.2 339.7,319.0 339.7,318.8 339.7,318.5 339.7,318.3 339.7,318.1 339.6,317.9 339.5,317.6 339.5,317.4 339.5,317.1 339.5,316.8 339.6,316.4 339.8,315.9 340.1,315.2 340.4,314.4 340.7,313.3 341.1,311.8 341.4,310.1 341.7,307.9 341.7,305.2 341.5,302.0 340.9,298.2" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="390.2,181.4 367.2,198.9 344.0,215.9 329.3,232.0 325.1,246.7 326.9,259.7 331.4,270.7 336.4,279.9 340.8,287.6 344.0,294.2 346.1,299.8 347.1,304.7 347.4,308.9 347.0,312.4 346.1,315.3 344.8,317.5 343.4,319.1 341.9,320.3 340.4,321.1 338.9,321.7 337.6,322.0 336.4,322.1 335.4,322.1 334.5,322.0 333.9,321.9 333.4,321.7 333.1,321.5 332.9,321.3 332.8,321.1 332.8,320.9 332.9,320.6 333.1,320.4 333.3,320.2 333.6,319.9 333.9,319.7 334.2,319.4 334.5,319.2 334.8,318.9 335.1,318.6 335.3,318.3 335.6,317.9 335.8,317.6 336.0,317.2 336.1,316.9 336.2,316.5 336.2,316.1 336.2,315.8 336.2,315.4 336.1,315.1 335.9,314.8 335.7,314.5 335.5,314.2 335.2,313.9 334.9,313.7 334.6,313.4 334.3,313.1 334.0,312.7 333.6,312.2" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="333.5,270.1 334.9,278.0 336.1,285.1 337.1,291.6 337.9,297.1 338.5,301.9 338.8,305.9 338.9,309.3 338.8,312.0 338.6,314.3 338.2,316.2 337.6,317.8 337.0,319.0 336.2,320.0 335.4,320.8 334.6,321.4 333.7,321.9 332.9,322.2 332.0,322.3 331.2,322.4 330.5,322.4 329.8,322.4 329.2,322.2 328.7,322.1 328.2,321.9 327.9,321.7 327.6,321.5 327.4,321.3 327.3,321.1 327.3,320.9 327.4,320.6 327.6,320.4 327.9,320.2 328.2,319.9 328.7,319.7 329.3,319.4 329.9,319.1 330.7,318.7 331.6,318.3 332.6,317.7 333.8,317.1 335.1,316.3 336.6,315.3 338.3,314.2 340.1,312.8 342.2,311.2 344.5,309.3 347.0,307.1 349.8,304.6 352.8,301.7 356.0,298.5 359.4,294.9 363.1,291.1 366.9,287.0 370.8,282.7 374.9,278.3 379.0,273.7 383.2,269.0" fill="none" stroke="var(--cyan)" stroke-opacity="0.95" stroke-width="1.80" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="321.2,323.1 321.5,323.3 321.8,323.4 322.2,323.6 322.5,323.7 322.8,323.7 323.0,323.7 323.3,323.7 323.5,323.7 323.7,323.7 323.8,323.6 323.9,323.6 324.0,323.5 324.1,323.4 324.1,323.4 324.0,323.3 323.9,323.2 323.8,323.1 323.7,323.0 323.5,322.8 323.3,322.7 323.0,322.5 322.8,322.3 322.6,322.1 322.3,321.9 322.1,321.7 321.9,321.5 321.8,321.3 321.8,321.1 321.8,320.9 321.9,320.6 322.2,320.4 322.5,320.2 323.1,320.0 323.8,319.7 324.8,319.4 326.0,319.0 327.6,318.5 329.5,317.8 332.0,316.8 334.9,315.5 338.6,313.7 343.0,311.3 348.1,308.1 354.1,304.0 360.7,298.8 367.9,292.6 375.5,285.4 383.5,277.6 391.7,269.2 400.0,260.6 408.6,251.8 417.2,243.1 426.0,234.5 434.8,226.2 443.8,218.7 452.7,212.4 461.7,208.5" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="336.2,309.3 329.6,314.2 324.7,317.8 321.2,320.4 318.7,322.2 317.0,323.5 315.9,324.3 315.1,324.8 314.7,325.0 314.5,325.0 314.4,325.0 314.4,324.8 314.6,324.6 314.8,324.4 315.0,324.2 315.3,323.9 315.5,323.7 315.7,323.5 316.0,323.2 316.1,323.0 316.3,322.8 316.4,322.6 316.4,322.4 316.4,322.2 316.4,322.0 316.4,321.7 316.4,321.5 316.4,321.3 316.4,321.1 316.5,320.9 316.7,320.6 317.0,320.4 317.6,320.2 318.3,320.0 319.4,319.7 320.9,319.4 322.9,318.9 325.6,318.1 329.1,317.0 333.8,315.3 339.8,312.7 347.2,308.9 356.0,303.5 365.8,296.3 376.2,287.3 387.1,276.9 398.3,265.6 409.8,254.0 421.5,242.1 433.3,230.4 445.4,219.1 457.5,208.8 469.8,200.8 482.1,198.0 494.4,215.6 506.8,455.2 519.0,505.3 531.2,539.8" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="390.9,269.3 379.9,279.0 368.5,288.4 356.7,297.2 345.1,304.8 334.8,310.9 326.7,315.6 320.7,318.9 316.5,321.1 313.7,322.6 311.7,323.5 310.4,324.0 309.5,324.3 309.0,324.3 308.8,324.2 308.7,324.0 308.8,323.8 309.0,323.6 309.2,323.3 309.5,323.1 309.8,322.9 310.1,322.6 310.3,322.4 310.5,322.2 310.7,322.0 310.9,321.7 311.0,321.5 311.1,321.3 311.3,321.1 311.5,320.9 311.8,320.6 312.3,320.4 313.0,320.2 314.0,320.0 315.5,319.7 317.6,319.4 320.6,318.7 324.8,317.7 330.6,315.8 338.5,312.8 348.7,308.0 360.7,300.7 373.7,290.6 387.2,278.3 401.1,264.6 415.2,250.2 429.6,235.7 444.3,221.4 459.2,208.1 474.3,197.1 489.5,192.6 504.7,225.0 519.9,485.3 535.0,533.8 549.9,571.2 564.7,604.5 579.3,635.3 593.6,664.5" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="422.2,242.9 411.9,252.5 401.2,262.5 389.8,272.7 377.8,282.9 364.8,292.8 351.3,301.6 338.1,308.9 327.1,314.4 319.0,318.2 313.5,320.8 309.7,322.4 307.2,323.4 305.5,323.9 304.4,324.1 303.7,324.0 303.4,323.9 303.3,323.7 303.4,323.4 303.6,323.2 303.9,322.9 304.2,322.7 304.6,322.4 305.0,322.2 305.4,322.0 305.7,321.7 306.0,321.5 306.2,321.3 306.5,321.1 306.9,320.9 307.3,320.6 307.9,320.5 308.9,320.3 310.2,320.1 312.1,319.8 315.0,319.4 319.1,318.5 325.2,316.9 334.2,314.0 346.5,308.9 361.3,300.5 377.1,288.3 393.3,273.3 409.8,256.8 426.5,239.9 443.6,223.0 461.0,207.1 478.6,193.9 496.4,189.7 514.2,412.9 532.0,514.0 549.6,561.9 566.9,601.9 584.1,638.3 600.9,672.6 617.5,705.4 633.7,736.9 649.6,767.4" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
+                    <p class="example-caption">Exported from the live canvas · z = 0 · asinh-compressed view · u₁ -2.588…1.10e+4 · u₂ -6367…1.30e+4 · 34 of 1044 beyond view</p>
+                </article>
+                <article class="example-card">
+                    <div class="example-head">
+                        <h3>The singular contrast: k = 0</h3>
+                        <span class="example-kicker">rescale to zero</span>
+                    </div>
+                    <code class="example-pipeline">F = D₁[0] ∘ G</code>
+                    <dl class="example-meta">
+                        <div><dt>det J_F</dt><dd>0</dd></div>
+                        <div><dt>character</dt><dd>singular · dimension collapsed</dd></div>
+                        <div><dt>degree bound</dt><dd>6</dd></div>
+                        <div><dt>all three witnesses ↦</dt><dd>(0, 0, 0)</dd></div>
+                    </dl>
+                    <p class="example-prose">Rescaling the first output to zero is the one move that breaks the Keller condition: the determinant becomes 0, the first coordinate dies, every witness lands on the same trivial point, and the slice collapses onto a line.</p>
+                    <svg class="example-plot" viewBox="0 0 900 620" role="img" aria-label="Collapsed slice after rescaling the first output to zero" preserveAspectRatio="xMidYMid meet">
+<rect width="900" height="620" fill="var(--bg-soft)"/>
+<polyline points="450.0,750.0 450.0,734.4 450.0,718.9 450.0,703.7 450.0,688.6 450.0,673.8 450.0,659.1 450.0,644.6 450.0,630.3 450.0,616.2 450.0,602.3 450.0,588.5 450.0,575.0 450.0,561.7 450.0,548.5 450.0,535.5 450.0,522.8 450.0,510.2 450.0,497.8 450.0,485.6 450.0,473.6 450.0,461.8 450.0,450.2 450.0,438.7 450.0,427.5 450.0,416.4 450.0,405.6 450.0,394.9 450.0,384.4 450.0,374.1 450.0,364.0 450.0,354.1 450.0,344.4 450.0,334.9 450.0,325.6 450.0,316.4 450.0,307.5 450.0,298.7 450.0,290.1 450.0,281.8 450.0,273.6 450.0,265.6 450.0,257.8 450.0,250.2 450.0,242.7 450.0,235.5 450.0,228.5 450.0,221.6 450.0,215.0 450.0,208.5 450.0,202.2 450.0,196.1 450.0,190.2 450.0,184.5 450.0,179.0 450.0,173.7 450.0,168.6 450.0,163.6" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,559.6 450.0,551.5 450.0,543.6 450.0,535.7 450.0,527.9 450.0,520.2 450.0,512.5 450.0,505.0 450.0,497.5 450.0,490.1 450.0,482.8 450.0,475.5 450.0,468.4 450.0,461.3 450.0,454.3 450.0,447.4 450.0,440.6 450.0,433.8 450.0,427.1 450.0,420.6 450.0,414.0 450.0,407.6 450.0,401.3 450.0,395.0 450.0,388.8 450.0,382.7 450.0,376.7 450.0,370.7 450.0,364.8 450.0,359.1 450.0,353.4 450.0,347.7 450.0,342.2 450.0,336.7 450.0,331.3 450.0,326.0 450.0,320.8 450.0,315.7 450.0,310.6 450.0,305.6 450.0,300.7 450.0,295.9 450.0,291.2 450.0,286.5 450.0,281.9 450.0,277.4 450.0,273.0 450.0,268.7 450.0,264.4 450.0,260.2 450.0,256.2 450.0,252.1 450.0,248.2 450.0,244.4 450.0,240.6 450.0,236.9 450.0,233.3 450.0,229.7" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,427.6 450.0,424.4 450.0,421.2 450.0,418.0 450.0,414.8 450.0,411.7 450.0,408.5 450.0,405.4 450.0,402.4 450.0,399.3 450.0,396.3 450.0,393.3 450.0,390.3 450.0,387.4 450.0,384.4 450.0,381.5 450.0,378.6 450.0,375.8 450.0,372.9 450.0,370.1 450.0,367.4 450.0,364.6 450.0,361.8 450.0,359.1 450.0,356.4 450.0,353.8 450.0,351.1 450.0,348.5 450.0,345.9 450.0,343.3 450.0,340.8 450.0,338.3 450.0,335.8 450.0,333.3 450.0,330.8 450.0,328.4 450.0,326.0 450.0,323.6 450.0,321.3 450.0,318.9 450.0,316.6 450.0,314.3 450.0,312.1 450.0,309.8 450.0,307.6 450.0,305.4 450.0,303.3 450.0,301.1 450.0,299.0 450.0,296.9 450.0,294.9 450.0,292.8 450.0,290.8 450.0,288.8 450.0,286.8 450.0,284.9 450.0,282.9 450.0,281.0" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,346.9 450.0,346.1 450.0,345.4 450.0,344.7 450.0,344.0 450.0,343.2 450.0,342.5 450.0,341.8 450.0,341.1 450.0,340.4 450.0,339.7 450.0,339.0 450.0,338.3 450.0,337.6 450.0,337.0 450.0,336.3 450.0,335.6 450.0,334.9 450.0,334.2 450.0,333.6 450.0,332.9 450.0,332.2 450.0,331.6 450.0,330.9 450.0,330.2 450.0,329.6 450.0,328.9 450.0,328.3 450.0,327.6 450.0,327.0 450.0,326.4 450.0,325.7 450.0,325.1 450.0,324.5 450.0,323.8 450.0,323.2 450.0,322.6 450.0,322.0 450.0,321.3 450.0,320.7 450.0,320.1 450.0,319.5 450.0,318.9 450.0,318.3 450.0,317.7 450.0,317.1 450.0,316.5 450.0,315.9 450.0,315.3 450.0,314.8 450.0,314.2 450.0,313.6 450.0,313.0 450.0,312.5 450.0,311.9 450.0,311.3 450.0,310.8 450.0,310.2" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0 450.0,310.0" fill="none" stroke="var(--accent)" stroke-opacity="0.95" stroke-width="1.80" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,309.8 450.0,309.2 450.0,308.7 450.0,308.1 450.0,307.5 450.0,307.0 450.0,306.4 450.0,305.8 450.0,305.2 450.0,304.7 450.0,304.1 450.0,303.5 450.0,302.9 450.0,302.3 450.0,301.7 450.0,301.1 450.0,300.5 450.0,299.9 450.0,299.3 450.0,298.7 450.0,298.0 450.0,297.4 450.0,296.8 450.0,296.2 450.0,295.5 450.0,294.9 450.0,294.3 450.0,293.6 450.0,293.0 450.0,292.4 450.0,291.7 450.0,291.1 450.0,290.4 450.0,289.8 450.0,289.1 450.0,288.4 450.0,287.8 450.0,287.1 450.0,286.4 450.0,285.8 450.0,285.1 450.0,284.4 450.0,283.7 450.0,283.0 450.0,282.4 450.0,281.7 450.0,281.0 450.0,280.3 450.0,279.6 450.0,278.9 450.0,278.2 450.0,277.5 450.0,276.8 450.0,276.0 450.0,275.3 450.0,274.6 450.0,273.9 450.0,273.1" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,339.0 450.0,337.1 450.0,335.1 450.0,333.2 450.0,331.2 450.0,329.2 450.0,327.2 450.0,325.1 450.0,323.1 450.0,321.0 450.0,318.9 450.0,316.7 450.0,314.6 450.0,312.4 450.0,310.2 450.0,307.9 450.0,305.7 450.0,303.4 450.0,301.1 450.0,298.7 450.0,296.4 450.0,294.0 450.0,291.6 450.0,289.2 450.0,286.7 450.0,284.2 450.0,281.7 450.0,279.2 450.0,276.7 450.0,274.1 450.0,271.5 450.0,268.9 450.0,266.2 450.0,263.6 450.0,260.9 450.0,258.2 450.0,255.4 450.0,252.6 450.0,249.9 450.0,247.1 450.0,244.2 450.0,241.4 450.0,238.5 450.0,235.6 450.0,232.6 450.0,229.7 450.0,226.7 450.0,223.7 450.0,220.7 450.0,217.6 450.0,214.6 450.0,211.5 450.0,208.3 450.0,205.2 450.0,202.0 450.0,198.8 450.0,195.6 450.0,192.4" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,390.3 450.0,386.7 450.0,383.1 450.0,379.4 450.0,375.6 450.0,371.8 450.0,367.9 450.0,363.8 450.0,359.8 450.0,355.6 450.0,351.3 450.0,347.0 450.0,342.6 450.0,338.1 450.0,333.5 450.0,328.8 450.0,324.1 450.0,319.3 450.0,314.4 450.0,309.4 450.0,304.3 450.0,299.2 450.0,294.0 450.0,288.7 450.0,283.3 450.0,277.8 450.0,272.3 450.0,266.6 450.0,260.9 450.0,255.2 450.0,249.3 450.0,243.3 450.0,237.3 450.0,231.2 450.0,225.0 450.0,218.7 450.0,212.4 450.0,206.0 450.0,199.4 450.0,192.9 450.0,186.2 450.0,179.4 450.0,172.6 450.0,165.7 450.0,158.7 450.0,151.6 450.0,144.5 450.0,137.2 450.0,129.9 450.0,122.5 450.0,115.0 450.0,107.5 450.0,99.8 450.0,92.1 450.0,84.3 450.0,76.4 450.0,68.5 450.0,60.4" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,456.4 450.0,451.4 450.0,446.3 450.0,441.0 450.0,435.5 450.0,429.8 450.0,423.9 450.0,417.8 450.0,411.5 450.0,405.0 450.0,398.4 450.0,391.5 450.0,384.5 450.0,377.3 450.0,369.8 450.0,362.2 450.0,354.4 450.0,346.4 450.0,338.2 450.0,329.9 450.0,321.3 450.0,312.5 450.0,303.6 450.0,294.4 450.0,285.1 450.0,275.6 450.0,265.9 450.0,256.0 450.0,245.9 450.0,235.6 450.0,225.1 450.0,214.4 450.0,203.6 450.0,192.5 450.0,181.3 450.0,169.8 450.0,158.2 450.0,146.4 450.0,134.4 450.0,122.2 450.0,109.8 450.0,97.2 450.0,84.5 450.0,71.5 450.0,58.3 450.0,45.0 450.0,31.5 450.0,17.7 450.0,3.8 450.0,-10.3 450.0,-24.6 450.0,-39.1 450.0,-53.8 450.0,-68.6 450.0,-83.7 450.0,-98.9 450.0,-114.4 450.0,-130.0" fill="none" stroke="var(--accent)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,750.0 450.0,719.5 450.0,690.2 450.0,662.3 450.0,635.5 450.0,609.9 450.0,585.6 450.0,562.4 450.0,540.4 450.0,519.5 450.0,499.7 450.0,481.0 450.0,463.4 450.0,446.9 450.0,431.3 450.0,416.8 450.0,403.3 450.0,390.8 450.0,379.2 450.0,368.5 450.0,358.8 450.0,349.9 450.0,342.0 450.0,334.8 450.0,328.5 450.0,323.1 450.0,318.4 450.0,314.5 450.0,311.3 450.0,308.9 450.0,307.2 450.0,306.1 450.0,305.8 450.0,306.1 450.0,307.0 450.0,308.5 450.0,310.7 450.0,313.4 450.0,316.6 450.0,320.4 450.0,324.7 450.0,329.5 450.0,334.7 450.0,340.4 450.0,346.6 450.0,353.1 450.0,360.1 450.0,367.4 450.0,375.0 450.0,383.0 450.0,391.3 450.0,399.9 450.0,408.7 450.0,417.9 450.0,427.2 450.0,436.7 450.0,446.5 450.0,456.4" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,642.8 450.0,620.8 450.0,599.6 450.0,579.3 450.0,559.8 450.0,541.1 450.0,523.2 450.0,506.1 450.0,489.8 450.0,474.3 450.0,459.5 450.0,445.5 450.0,432.3 450.0,419.7 450.0,407.9 450.0,396.8 450.0,386.4 450.0,376.6 450.0,367.5 450.0,359.1 450.0,351.4 450.0,344.2 450.0,337.8 450.0,331.9 450.0,326.6 450.0,321.9 450.0,317.8 450.0,314.3 450.0,311.3 450.0,308.9 450.0,307.0 450.0,305.6 450.0,304.7 450.0,304.4 450.0,304.5 450.0,305.1 450.0,306.2 450.0,307.7 450.0,309.7 450.0,312.2 450.0,315.0 450.0,318.2 450.0,321.9 450.0,325.9 450.0,330.4 450.0,335.1 450.0,340.3 450.0,345.8 450.0,351.6 450.0,357.7 450.0,364.2 450.0,370.9 450.0,377.9 450.0,385.2 450.0,392.8 450.0,400.6 450.0,408.7 450.0,417.0" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,545.2 450.0,530.7 450.0,516.7 450.0,503.2 450.0,490.2 450.0,477.6 450.0,465.6 450.0,454.0 450.0,442.9 450.0,432.2 450.0,422.0 450.0,412.3 450.0,403.0 450.0,394.1 450.0,385.7 450.0,377.8 450.0,370.2 450.0,363.1 450.0,356.4 450.0,350.1 450.0,344.2 450.0,338.7 450.0,333.7 450.0,329.0 450.0,324.7 450.0,320.8 450.0,317.2 450.0,314.1 450.0,311.3 450.0,308.8 450.0,306.8 450.0,305.0 450.0,303.7 450.0,302.6 450.0,302.0 450.0,301.6 450.0,301.6 450.0,301.9 450.0,302.5 450.0,303.4 450.0,304.6 450.0,306.2 450.0,308.0 450.0,310.2 450.0,312.6 450.0,315.3 450.0,318.3 450.0,321.5 450.0,325.0 450.0,328.8 450.0,332.9 450.0,337.2 450.0,341.7 450.0,346.5 450.0,351.5 450.0,356.8 450.0,362.2 450.0,367.9" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,457.4 450.0,449.4 450.0,441.7 450.0,434.1 450.0,426.8 450.0,419.7 450.0,412.7 450.0,406.0 450.0,399.5 450.0,393.3 450.0,387.2 450.0,381.3 450.0,375.6 450.0,370.1 450.0,364.8 450.0,359.8 450.0,354.9 450.0,350.2 450.0,345.7 450.0,341.4 450.0,337.3 450.0,333.4 450.0,329.7 450.0,326.1 450.0,322.8 450.0,319.6 450.0,316.6 450.0,313.8 450.0,311.2 450.0,308.8 450.0,306.6 450.0,304.5 450.0,302.6 450.0,300.9 450.0,299.3 450.0,298.0 450.0,296.8 450.0,295.7 450.0,294.9 450.0,294.2 450.0,293.7 450.0,293.3 450.0,293.1 450.0,293.1 450.0,293.2 450.0,293.5 450.0,294.0 450.0,294.6 450.0,295.4 450.0,296.3 450.0,297.4 450.0,298.6 450.0,300.0 450.0,301.6 450.0,303.2 450.0,305.1 450.0,307.1 450.0,309.2" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,379.3 450.0,376.8 450.0,374.4 450.0,372.0 450.0,369.5 450.0,367.1 450.0,364.7 450.0,362.2 450.0,359.8 450.0,357.4 450.0,355.0 450.0,352.5 450.0,350.1 450.0,347.7 450.0,345.2 450.0,342.8 450.0,340.4 450.0,337.9 450.0,335.5 450.0,333.1 450.0,330.7 450.0,328.2 450.0,325.8 450.0,323.4 450.0,320.9 450.0,318.5 450.0,316.1 450.0,313.6 450.0,311.2 450.0,308.8 450.0,306.4 450.0,303.9 450.0,301.5 450.0,299.1 450.0,296.6 450.0,294.2 450.0,291.8 450.0,289.3 450.0,286.9 450.0,284.5 450.0,282.1 450.0,279.6 450.0,277.2 450.0,274.8 450.0,272.3 450.0,269.9 450.0,267.5 450.0,265.0 450.0,262.6 450.0,260.2 450.0,257.8 450.0,255.3 450.0,252.9 450.0,250.5 450.0,248.0 450.0,245.6 450.0,243.2 450.0,240.7" fill="none" stroke="var(--cyan)" stroke-opacity="0.95" stroke-width="1.80" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,310.8 450.0,312.9 450.0,314.9 450.0,316.8 450.0,318.4 450.0,320.0 450.0,321.4 450.0,322.6 450.0,323.7 450.0,324.6 450.0,325.4 450.0,326.0 450.0,326.5 450.0,326.8 450.0,326.9 450.0,326.9 450.0,326.7 450.0,326.3 450.0,325.8 450.0,325.1 450.0,324.3 450.0,323.2 450.0,322.0 450.0,320.7 450.0,319.1 450.0,317.4 450.0,315.5 450.0,313.4 450.0,311.2 450.0,308.8 450.0,306.2 450.0,303.4 450.0,300.4 450.0,297.2 450.0,293.9 450.0,290.3 450.0,286.6 450.0,282.7 450.0,278.6 450.0,274.3 450.0,269.8 450.0,265.1 450.0,260.2 450.0,255.2 450.0,249.9 450.0,244.4 450.0,238.7 450.0,232.8 450.0,226.7 450.0,220.5 450.0,214.0 450.0,207.3 450.0,200.3 450.0,193.2 450.0,185.9 450.0,178.3 450.0,170.6 450.0,162.6" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,252.1 450.0,257.8 450.0,263.2 450.0,268.5 450.0,273.5 450.0,278.3 450.0,282.8 450.0,287.1 450.0,291.2 450.0,295.0 450.0,298.5 450.0,301.7 450.0,304.7 450.0,307.4 450.0,309.8 450.0,312.0 450.0,313.8 450.0,315.4 450.0,316.6 450.0,317.5 450.0,318.1 450.0,318.4 450.0,318.4 450.0,318.0 450.0,317.4 450.0,316.3 450.0,315.0 450.0,313.2 450.0,311.2 450.0,308.7 450.0,305.9 450.0,302.8 450.0,299.2 450.0,295.3 450.0,291.0 450.0,286.3 450.0,281.3 450.0,275.8 450.0,269.9 450.0,263.6 450.0,256.9 450.0,249.8 450.0,242.2 450.0,234.3 450.0,225.9 450.0,217.0 450.0,207.7 450.0,198.0 450.0,187.8 450.0,177.1 450.0,166.0 450.0,154.4 450.0,142.4 450.0,129.8 450.0,116.8 450.0,103.3 450.0,89.3 450.0,74.8" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,203.0 450.0,211.3 450.0,219.4 450.0,227.2 450.0,234.8 450.0,242.1 450.0,249.1 450.0,255.8 450.0,262.3 450.0,268.4 450.0,274.2 450.0,279.7 450.0,284.9 450.0,289.6 450.0,294.1 450.0,298.1 450.0,301.8 450.0,305.0 450.0,307.8 450.0,310.3 450.0,312.3 450.0,313.8 450.0,314.9 450.0,315.5 450.0,315.6 450.0,315.3 450.0,314.4 450.0,313.0 450.0,311.1 450.0,308.7 450.0,305.7 450.0,302.2 450.0,298.1 450.0,293.4 450.0,288.1 450.0,282.2 450.0,275.8 450.0,268.6 450.0,260.9 450.0,252.5 450.0,243.4 450.0,233.6 450.0,223.2 450.0,212.1 450.0,200.3 450.0,187.7 450.0,174.5 450.0,160.5 450.0,145.7 450.0,130.2 450.0,113.9 450.0,96.8 450.0,78.9 450.0,60.2 450.0,40.7 450.0,20.4 450.0,-0.8 450.0,-22.8" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+<polyline points="450.0,163.6 450.0,173.5 450.0,183.3 450.0,192.8 450.0,202.1 450.0,211.3 450.0,220.1 450.0,228.7 450.0,237.0 450.0,245.0 450.0,252.6 450.0,259.9 450.0,266.9 450.0,273.4 450.0,279.6 450.0,285.3 450.0,290.5 450.0,295.3 450.0,299.6 450.0,303.4 450.0,306.6 450.0,309.3 450.0,311.5 450.0,313.0 450.0,313.9 450.0,314.2 450.0,313.9 450.0,312.8 450.0,311.1 450.0,308.7 450.0,305.5 450.0,301.6 450.0,296.9 450.0,291.5 450.0,285.2 450.0,278.0 450.0,270.1 450.0,261.2 450.0,251.5 450.0,240.8 450.0,229.2 450.0,216.7 450.0,203.2 450.0,188.7 450.0,173.1 450.0,156.6 450.0,139.0 450.0,120.3 450.0,100.5 450.0,79.6 450.0,57.6 450.0,34.4 450.0,10.1 450.0,-15.5 450.0,-42.3 450.0,-70.2 450.0,-99.5 450.0,-130.0" fill="none" stroke="var(--cyan)" stroke-opacity="0.62" stroke-width="1.05" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
+                    <p class="example-caption">Exported from the live canvas · z = 0 · u₁ = 0 · u₂ -1.674…1.674 · 32 of 1044 beyond view</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="lab-ledger">
+            <div class="lab-section-heading">
+                <span>05 /</span>
+                <h2>Determinant ledger</h2>
+            </div>
+            <div class="pipeline-expression" id="pipelineExpression">F = G</div>
+            <ol class="pipeline-list" id="pipelineList" role="list"></ol>
+            <div class="determinant-proof">
+                <span>Chain rule</span>
+                <code id="determinantProof">det J_F = 1</code>
+            </div>
+        </section>
+
+        <section class="lab-equations">
+            <div class="lab-section-heading">
+                <span>06 /</span>
+                <h2>The base map</h2>
+            </div>
+            <div class="equation-stack" aria-label="The three components of the base polynomial map G">
+                <code>G₁(x,y,z) = (1 + 2xy)³z + y²(1 + 2xy)(4 + 6xy)</code>
+                <code>G₂(x,y,z) = y + 6x(1 + 2xy)²z + 6xy²(4 + 6xy)</code>
+                <code>G₃(x,y,z) = −x + 3x²y + 2x³z</code>
+            </div>
+            <p>
+                G is the map F announced by Levent Alpöge in July 2026 <a class="ref-mark" href="#ref-1">[1]</a> —
+                with the question posed by Akhil Mathew and the search carried out with Claude (Fable) — in the
+                determinant-one form due to N8Programs <a class="ref-mark" href="#ref-2">[2]</a>:
+                G&nbsp;=&nbsp;diag(¼,&nbsp;½,&nbsp;−½)&nbsp;∘&nbsp;F&nbsp;∘&nbsp;diag(1,&nbsp;2,&nbsp;4) moves
+                det&nbsp;J from −2 to exactly 1 while changing nothing essential. Every fiber of G has three, one,
+                or zero points, and the image misses only a smooth curve. G is étale but not proper: preimages can
+                escape to infinity while their images converge, and properness is precisely the loophole — a
+                <em>proper</em> Keller map is a polynomial automorphism. The construction falsifies the conjecture
+                in every dimension n&nbsp;≥&nbsp;3; dimension two remains open.
+            </p>
+            <p>
+                The displayed composition stays in factored pipeline form because expanding repeated copies of G
+                grows very quickly. Every stage is still a polynomial map, and its determinant follows exactly from
+                the stage factors shown above. See the verification note
+                <a class="ref-mark" href="#ref-3">[3]</a> for the fiber-by-fiber geometry.
+            </p>
+        </section>
+
+        <section class="lab-references" id="references">
+            <div class="lab-section-heading">
+                <span>07 /</span>
+                <h2>References</h2>
+            </div>
+            <ol class="reference-list">
+                <li id="ref-1">
+                    L. Alpöge.
+                    <a href="https://x.com/__alpoge__/status/2079028340955197566" target="_blank" rel="noopener">&ldquo;Hello there the Jacobian conjecture is false.&rdquo;</a>
+                    X, July 2026. The announcement; credits Akhil Mathew for the question and Claude (Fable) for the search.
+                </li>
+                <li id="ref-2">
+                    N8Programs.
+                    <a href="https://x.com/N8Programs/status/2079061392649302185" target="_blank" rel="noopener">Determinant-one form of the counterexample.</a>
+                    X, July 2026. The det&nbsp;J&nbsp;=&nbsp;1 convention used for the base map G on this page.
+                </li>
+                <li id="ref-3">
+                    <a href="https://www.ulam.ai/research/jacobian.pdf" target="_blank" rel="noopener">&ldquo;A Counterexample to the Jacobian Conjecture.&rdquo;</a>
+                    Verification note, ulam.ai, July 2026. Exact determinant and the three-point fiber; the full fiber
+                    count, image, and nonproperness geometry; families of every generic degree ≥ 3.
+                </li>
+                <li id="ref-4">
+                    A. Gallagher.
+                    <a href="https://jacobianfun.org/jacobian-explained" target="_blank" rel="noopener">&ldquo;The Jacobian counterexample, explained.&rdquo;</a>
+                    jacobianfun.org, July 2026. An accessible walkthrough with reproducible symbolic checks.
+                </li>
+                <li id="ref-5">
+                    O.-H. Keller. &ldquo;Ganze Cremona-Transformationen.&rdquo;
+                    <em>Monatsh. Math. Phys.</em> 47 (1939), 299–306. The original conjecture.
+                </li>
+            </ol>
+        </section>
+
+        <footer class="lab-footer">
+            <span>Built as a computational note by Alvin Zhang.</span>
+            <a href="https://www.ulam.ai/research/jacobian.pdf" target="_blank" rel="noopener">Verification note (PDF) ↗</a>
+            <a href="https://en.wikipedia.org/wiki/Jacobian_conjecture" target="_blank" rel="noopener">About the Jacobian conjecture ↗</a>
+        </footer>
+    </main>
+
+    <script src="playground.js"></script>
+</body>
+</html>
